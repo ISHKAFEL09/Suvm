@@ -1,9 +1,8 @@
-import dev.SuvmFork
-
+import java.io.{File, FileWriter}
 import scala.util.Random
 
 package object suvm {
-  object SuvmFieldFlag extends Enumeration {
+  object SuvmRadixEnum extends Enumeration {
     val UVM_BIN = Value
     val UVM_DEC = Value
     val UVM_UNSIGNED = Value
@@ -18,6 +17,28 @@ package object suvm {
     val UVM_REAL_DEC = Value
     val UVM_REAL_EXP = Value
     val UVM_NORADIX = Value
+  }
+
+  object SuvmOpcodeEnum extends Enumeration {
+    val UVM_COPY = Value
+    val UVM_NOCOPY = Value
+    val UVM_COMPARE = Value
+    val UVM_NOCOMPARE = Value
+    val UVM_PRINT = Value
+    val UVM_NOPRINT = Value
+    val UVM_RECORD = Value
+    val UVM_NORECORD = Value
+    val UVM_PACK = Value
+    val UVM_NOPACK = Value
+    val UVM_UNPACK = Value
+    val UVM_NOUNPACK = Value
+    val UVM_SET = Value
+    val UVM_NOSET = Value
+    val UVM_NODEFPRINT = Value
+    val UVM_FLAGS_ON = Value
+    val UVM_FLAGS_OFF = Value
+    val UVM_ALL_ON = UVM_FLAGS_ON
+    val UVM_DEFAULT = UVM_ALL_ON
   }
 
   object SuvmVerbosity extends Enumeration {
@@ -43,5 +64,17 @@ package object suvm {
                       fileName: String = "", line: Int = 0, contextName: String = "",
                       reportEnabledChecked: Boolean = false): Unit = {
     // TODO
+  }
+
+  def fWrite(file: Option[File], msg: String, append: Boolean = true): Unit = {
+    if (file.isEmpty) { println(msg) } else {
+      val writer = new FileWriter(file.get, append)
+      try {
+        writer.write(msg)
+      }
+      finally {
+        writer.close()
+      }
+    }
   }
 }

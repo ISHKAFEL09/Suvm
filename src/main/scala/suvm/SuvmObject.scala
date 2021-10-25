@@ -36,47 +36,92 @@ abstract class SuvmObject(val name: String = "") extends SuvmVoid {
   def createObj(name: String): Option[SuvmObject]
   def cloneObj: Option[SuvmObject] = createObj(getName) flatMap { s => s.copyObj(Some(this)) }
 
-  // TODO
-//  final def printObj(printer: Option[SuvmPrinter] = None): Unit = {}
-//  final def sPrintObj(printer: Option[SuvmPrinter] = None): Unit = {}
-//  def doPrint(printer: SuvmPrinter): Unit
+  final def printObj(printer: Option[SuvmPrinter] = None): Unit = {
+    val mPrinter = if (printer.isEmpty) SuvmPrinter.getDefault else printer.get
+    fWrite(mPrinter.getFile, sPrintObj(Some(mPrinter)))
+  }
+  final def sPrintObj(printer: Option[SuvmPrinter] = None): String = {
+    val mPrinter = if (printer.isEmpty) SuvmPrinter.getDefault else printer.get
+    val name: String = if (!mPrinter.getActiveObjectDepth) {
+      mPrinter.flush()
+      if (mPrinter.getRootEnabled) getFullName else getName
+    } else getName
+    mPrinter.printObject(name, this)
+    mPrinter.emit
+  }
+  def doPrint(printer: SuvmPrinter): Unit = {}
   def convert2String: String = ""
 
   final def record(recorder: Option[SuvmRecorder] = None): Unit = {}
-  def doRecord(recorder: SuvmRecorder): Unit
+  def doRecord(recorder: SuvmRecorder): Unit = {}
 
   final def copyObj(rhs: Option[SuvmObject], copier: Option[SuvmCopier] = None): Option[SuvmObject] = rhs flatMap { i =>
       val mCopier = if (copier.isEmpty) SuvmCoreService.getDefaultCopier else copier.get
       mCopier.copyObject(this, i)
   }
-  def doCopy(rhs: SuvmObject): Unit
+  def doCopy(rhs: SuvmObject): Unit = {}
 
-  final def compareObj(rhs: SuvmObject, comparer: Option[SuvmComparer] = None): Boolean = { false }
-  def doCompare(rhs: SuvmObject, comparer: SuvmComparer): Boolean
+  final def compareObj(rhs: SuvmObject, comparer: Option[SuvmComparer] = None): Boolean = {
+    val mComparer = if (comparer.isEmpty) SuvmComparer.getDefault else comparer.get
+    if (!mComparer.getActiveObjectDepth) mComparer.flush()
+    mComparer.compareObject(getName, this, rhs)
+  }
+  def doCompare(rhs: SuvmObject, comparer: SuvmComparer): Boolean = true
 
-  final def packObj(bitstream: Seq[Boolean], packer: Option[SuvmPacker] = None): (Int, Seq[Boolean])
-  final def packBytesObj(bitstream: Seq[Byte], packer: Option[SuvmPacker] = None): (Int, Seq[Byte])
-  final def packIntsObj(bitstream: Seq[Int], packer: Option[SuvmPacker] = None): (Int, Seq[Int])
-  final def packLongsObj(bitstream: Seq[Long], packer: Option[SuvmPacker] = None): (Int, Seq[Long])
-  def doPack(packer: SuvmPacker): Unit
+  private def pack[T](packer: Option[SuvmPacker] = None): (Int, Seq[T]) = {
+    val mPacker = mPack(packer)
+    (mPacker.getPackedSize, mPacker.getPacked[T])
+  }
+  final def packBits(packer: Option[SuvmPacker] = None): (Int, Seq[Boolean]) = pack[Boolean](packer)
+  final def packBytes(packer: Option[SuvmPacker] = None): (Int, Seq[Byte]) = pack[Byte](packer)
+  final def packInts(packer: Option[SuvmPacker] = None): (Int, Seq[Int]) = pack[Int](packer)
+  final def packLongs(packer: Option[SuvmPacker] = None): (Int, Seq[Long]) = pack[Long](packer)
+  def doPack(packer: SuvmPacker): Unit = {}
 
-  final def unPackObj(bitstream: Seq[Boolean], packer: Option[SuvmPacker] = None): (Int, Seq[Boolean])
-  final def unPackBytesObj(bitstream: Seq[Byte], packer: Option[SuvmPacker] = None): (Int, Seq[Byte])
-  final def unPackIntsObj(bitstream: Seq[Int], packer: Option[SuvmPacker] = None): (Int, Seq[Int])
-  final def unPackLongsObj(bitstream: Seq[Long], packer: Option[SuvmPacker] = None): (Int, Seq[Long])
-  def doUnpack(packer: SuvmPacker): Unit
+  private def unPack[T](s: Seq[T], packer: Option[SuvmPacker] = None): (Int, Seq[T]) = {
+    val mPacker = mUnpackPre(packer)
+    val stream = mPacker.setPacked[T](s)
+    (mUnpackPost(mPacker), stream)
+  }
+  final def unPackBits(s: Seq[Boolean], packer: Option[SuvmPacker] = None): (Int, Seq[Boolean]) =
+    unPack[Boolean](s, packer)
+  final def unPackBytes(s: Seq[Byte], packer: Option[SuvmPacker] = None): (Int, Seq[Byte]) =
+    unPack[Byte](s, packer)
+  final def unPackInts(s: Seq[Int], packer: Option[SuvmPacker] = None): (Int, Seq[Int]) =
+    unPack[Int](s, packer)
+  final def unPackLongs(s: Seq[Long], packer: Option[SuvmPacker] = None): (Int, Seq[Long]) =
+    unPack[Long](s, packer)
+  def doUnpack(packer: SuvmPacker): Unit = {}
 
-  def doExecuteOp(op: SuvmFieldOp): Unit
+  def doExecuteOp(op: SuvmFieldOp): Unit = {}
 
-  // TODO
-//  def setLocal(rsrc: SuvmResourceBase): Unit
-//  private def mUnsupportedSetLocal(rsrc: SuvmResourceBase): Unit = {}
+  def setLocal(rsrc: Option[SuvmResourceBase]): Unit = {
+    if (rsrc.nonEmpty) {
+      val op = SuvmFieldOp.getAvailableOp
+      op.set(SuvmOpcodeEnum.UVM_SET, None, rsrc)
+      doExecuteOp(op)
+      op.mRecycle()
+    }
+  }
+  private def mUnsupportedSetLocal(rsrc: SuvmResourceBase): Unit = {}
 
-  private def mPack(packer: SuvmPacker): SuvmPacker
-  private def mUnpackPre(packer: SuvmPacker): SuvmPacker
-  private def mUnpackPost(packer: SuvmPacker): SuvmPacker
-  private def _mSuvmFieldAutomation(tmpData: SuvmObject, str: String)
-  private def SuvmGetReportObject: SuvmReportObject
+  private def mPack(packer: Option[SuvmPacker]): SuvmPacker = {
+    val mPacker = if (packer.isEmpty) SuvmPacker.getDefault else packer.get
+    if (mPacker.getActiveObjectDepth) mPacker.flush()
+    mPacker.packObject(this)
+  }
+  private def mUnpackPre(packer: Option[SuvmPacker]): SuvmPacker = {
+    val mPacker = if (packer.isEmpty) SuvmPacker.getDefault else packer.get
+    if (mPacker.getActiveObjectDepth) mPacker.flush()
+    mPacker
+  }
+  private def mUnpackPost(packer: SuvmPacker): Int = {
+    val sizeBeforeUnpack = packer.getPackedSize
+    packer.unPackObject(this)
+    sizeBeforeUnpack - packer.getPackedSize
+  }
+  private def _mSuvmFieldAutomation(tmpData: SuvmObject, str: String): Unit = {}
+  private def SuvmGetReportObject: Option[SuvmReportObject] = None
 }
 
 object SuvmObject {
