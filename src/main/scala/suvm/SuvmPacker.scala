@@ -4,7 +4,10 @@ class SuvmPacker(name: String) extends SuvmPolicy(name) {
   def packObject(value: SuvmObject): SuvmPacker
   def unPackObject(value: SuvmObject): Unit
 
-  def getPacked[T]: Seq[T]
+  def getPackedBool: Seq[Boolean]
+  def getPackedInt: Seq[Int]
+  def getPackedByte: Seq[Byte]
+  def getPackedLong: Seq[Long]
   def setPacked[T](stream: Seq[T]): Seq[T]
   def getPackedSize: Int
 

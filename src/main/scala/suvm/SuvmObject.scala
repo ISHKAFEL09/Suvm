@@ -37,11 +37,11 @@ abstract class SuvmObject(val name: String = "") extends SuvmVoid {
   def cloneObj: Option[SuvmObject] = createObj(getName) flatMap { s => s.copyObj(Some(this)) }
 
   final def printObj(printer: Option[SuvmPrinter] = None): Unit = {
-    val mPrinter = if (printer.isEmpty) SuvmPrinter.getDefault else printer.get
+    val mPrinter = printer getOrElse SuvmPrinter.getDefault
     fWrite(mPrinter.getFile, sPrintObj(Some(mPrinter)))
   }
   final def sPrintObj(printer: Option[SuvmPrinter] = None): String = {
-    val mPrinter = if (printer.isEmpty) SuvmPrinter.getDefault else printer.get
+    val mPrinter = printer getOrElse SuvmPrinter.getDefault
     val name: String = if (!mPrinter.getActiveObjectDepth) {
       mPrinter.flush()
       if (mPrinter.getRootEnabled) getFullName else getName
@@ -52,30 +52,34 @@ abstract class SuvmObject(val name: String = "") extends SuvmVoid {
   def doPrint(printer: SuvmPrinter): Unit = {}
   def convert2String: String = ""
 
-  final def record(recorder: Option[SuvmRecorder] = None): Unit = {}
+  final def recordObj(recorder: Option[SuvmRecorder] = None): Unit = {}
   def doRecord(recorder: SuvmRecorder): Unit = {}
 
   final def copyObj(rhs: Option[SuvmObject], copier: Option[SuvmCopier] = None): Option[SuvmObject] = rhs flatMap { i =>
-      val mCopier = if (copier.isEmpty) SuvmCoreService.getDefaultCopier else copier.get
+      val mCopier = copier getOrElse SuvmCoreService.getDefaultCopier
       mCopier.copyObject(this, i)
   }
   def doCopy(rhs: SuvmObject): Unit = {}
 
   final def compareObj(rhs: SuvmObject, comparer: Option[SuvmComparer] = None): Boolean = {
-    val mComparer = if (comparer.isEmpty) SuvmComparer.getDefault else comparer.get
+    val mComparer = comparer getOrElse SuvmComparer.getDefault
     if (!mComparer.getActiveObjectDepth) mComparer.flush()
     mComparer.compareObject(getName, this, rhs)
   }
   def doCompare(rhs: SuvmObject, comparer: SuvmComparer): Boolean = true
 
-  private def pack[T](packer: Option[SuvmPacker] = None): (Int, Seq[T]) = {
+  private def packObj[T](packer: Option[SuvmPacker] = None, f: SuvmPacker => Seq[T]): (Int, Seq[T]) = {
     val mPacker = mPack(packer)
-    (mPacker.getPackedSize, mPacker.getPacked[T])
+    (mPacker.getPackedSize, f(mPacker))
   }
-  final def packBits(packer: Option[SuvmPacker] = None): (Int, Seq[Boolean]) = pack[Boolean](packer)
-  final def packBytes(packer: Option[SuvmPacker] = None): (Int, Seq[Byte]) = pack[Byte](packer)
-  final def packInts(packer: Option[SuvmPacker] = None): (Int, Seq[Int]) = pack[Int](packer)
-  final def packLongs(packer: Option[SuvmPacker] = None): (Int, Seq[Long]) = pack[Long](packer)
+  final def packBits(packer: Option[SuvmPacker] = None): (Int, Seq[Boolean]) =
+    packObj(packer, p => p.getPackedBool)
+  final def packBytes(packer: Option[SuvmPacker] = None): (Int, Seq[Byte]) =
+    packObj(packer, p => p.getPackedByte)
+  final def packInts(packer: Option[SuvmPacker] = None): (Int, Seq[Int]) =
+    packObj(packer, p => p.getPackedInt)
+  final def packLongs(packer: Option[SuvmPacker] = None): (Int, Seq[Long]) =
+    packObj(packer, p => p.getPackedLong)
   def doPack(packer: SuvmPacker): Unit = {}
 
   private def unPack[T](s: Seq[T], packer: Option[SuvmPacker] = None): (Int, Seq[T]) = {
@@ -106,7 +110,7 @@ abstract class SuvmObject(val name: String = "") extends SuvmVoid {
   private def mUnsupportedSetLocal(rsrc: SuvmResourceBase): Unit = {}
 
   private def mPack(packer: Option[SuvmPacker]): SuvmPacker = {
-    val mPacker = if (packer.isEmpty) SuvmPacker.getDefault else packer.get
+    val mPacker = packer getOrElse SuvmPacker.getDefault
     if (mPacker.getActiveObjectDepth) mPacker.flush()
     mPacker.packObject(this)
   }
@@ -124,15 +128,18 @@ abstract class SuvmObject(val name: String = "") extends SuvmVoid {
   private def SuvmGetReportObject: Option[SuvmReportObject] = None
 }
 
-object SuvmObject {
-  private var mInstCount: Int = 0
+trait SuvmObjectTrait {
+  private[SuvmObject] var mInstCount: Int = 0
 
-  def getInstCount: Int = mInstCount
+  private[SuvmObject] def getInstCount: Int = mInstCount
+  // TODO factory type
   def getType: Option[SuvmObjectWrapper] = {
     SuvmReportError("NOTYPID", "get_type not implemented in derived class." , SuvmVerbosity.UVM_NONE)
     None
   }
 }
+
+object SuvmObject extends SuvmObjectTrait
 
 object SuvmObjectTest extends App {
 }

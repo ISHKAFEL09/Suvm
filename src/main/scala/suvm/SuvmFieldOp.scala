@@ -9,7 +9,7 @@ class SuvmFieldOp(name: String) extends SuvmObject(name) {
   }
 }
 
-object SuvmFieldOp {
+object SuvmFieldOp extends {
   private val mRecycledOp = scala.collection.mutable.Queue.empty[SuvmFieldOp]
 
   def getAvailableOp: SuvmFieldOp = {

@@ -2,6 +2,10 @@ import java.io.{File, FileWriter}
 import scala.util.Random
 
 package object suvm {
+  type Time = Double
+
+  private[suvm] var realtime: Time = 0
+
   object SuvmRadixEnum extends Enumeration {
     val UVM_BIN = Value
     val UVM_DEC = Value
