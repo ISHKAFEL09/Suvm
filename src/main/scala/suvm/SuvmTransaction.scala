@@ -11,7 +11,7 @@ abstract class SuvmTransaction(name: String,
   final def acceptTr(acceptTime: Time = 0): Unit = {
     this.acceptTime = if (acceptTime != 0) acceptTime else realtime
     doAcceptTr()
-    val e: SuvmEvent[SuvmObject] = events.get("accept")
+    val e: SuvmEvent = events.get("accept")
     e.trigger() // TODO
   }
 
@@ -61,13 +61,44 @@ abstract class SuvmTransaction(name: String,
     // TODO
   }
 
-  private def mBeginTr(beginTime: Time = 0, parentHandle: Int = 0): Int
+  private def mBeginTr(beginTime: Time = 0, parentHandle: Int = 0): Int = {
+    var ret: Int = 0
+    val tmpTime: Time = if (beginTime == 0) realtime else beginTime
+    val parentRecorder = SuvmRecorder.getRecorderFromHandle(parentHandle)
+    if (trRecorder.nonEmpty) endTr(tmpTime)
+    if (isRecordingEnabled) {
+      val db: SuvmTrDatabase = streamHandle.get.getDb
+      this.endTime = -1
+      this.beginTime = tmpTime
+      val trRecorder = parentRecorder match {
+        case None => streamHandle.get.openRecorder(
+          getTypeName,
+          this.beginTime,
+          "Begin_No_Parent, Link")
+        case Some(r) =>
+          val tr = streamHandle.get.openRecorder(
+            getTypeName,
+            this.beginTime,
+            "Begin_End, Link"
+          )
+          if (tr.nonEmpty) db.establishLink()
+          tr
+      }
+      ret = if (trRecorder.isEmpty) 0 else trRecorder.get.getHandle
+    } else {
+      this.trRecorder = None
+      this.endTime = -1
+      this.beginTime = tmpTime
+    }
+    events.get("begin").trigger()
+    ret
+  }
 
   private val events = new SuvmEventPool
-  private[this] var mTransactionId: Int = -1
-  private[this] var beginTime: Time = -1
-  private[this] var endTime: Time = -1
-  private[this] var acceptTime: Time = -1
-  private[this] var streamHandle: Option[SuvmTrStream] = None
-  private[this] var trRecorder: Option[SuvmRecorder] = None
+  private var mTransactionId: Int = -1
+  private var beginTime: Time = -1
+  private var endTime: Time = -1
+  private var acceptTime: Time = -1
+  private var streamHandle: Option[SuvmTrStream] = None
+  private var trRecorder: Option[SuvmRecorder] = None
 }
