@@ -1,7 +1,8 @@
 package suvm
 
-abstract class SuvmTransaction(name: String,
-                               private[this] var initiator: Option[SuvmComponent] = None) extends SuvmObject {
+abstract class SuvmTransaction(name: String, private[this] var initiator: Option[SuvmComponent] = None)
+  extends SuvmObject(name) {
+
   def doAcceptTr(): Unit
 
   def doBeginTr(): Unit
@@ -21,7 +22,17 @@ abstract class SuvmTransaction(name: String,
   final def beginChildTr(beginTime: Time = 0, parentHandle: Int = 0): Int =
     mBeginTr(beginTime, parentHandle)
 
-  final def endTr(endTime: Time = 0, freeHandle: Int = 1): Int
+  final def endTr(endTime: Time = 0, freeHandle: Int = 1): Unit = {
+    this.endTime = if (endTime == 0) realtime else endTime
+    doEndTr()
+    if (isRecordingEnabled && trRecorder.nonEmpty) {
+      recordObj(trRecorder)
+      trRecorder.get.close(this.endTime)
+      if (freeHandle != 0) trRecorder.get.free()
+    }
+    trRecorder = None
+    events.get("end").trigger()
+  }
 
   final def getTrHandle: Int = if (trRecorder.isEmpty) 0 else trRecorder.get.getHandle
 
@@ -62,33 +73,26 @@ abstract class SuvmTransaction(name: String,
   }
 
   private def mBeginTr(beginTime: Time = 0, parentHandle: Int = 0): Int = {
-    var ret: Int = 0
     val tmpTime: Time = if (beginTime == 0) realtime else beginTime
     val parentRecorder = SuvmRecorder.getRecorderFromHandle(parentHandle)
     if (trRecorder.nonEmpty) endTr(tmpTime)
-    if (isRecordingEnabled) {
+    val ret = if (isRecordingEnabled) {
       val db: SuvmTrDatabase = streamHandle.get.getDb
       this.endTime = -1
       this.beginTime = tmpTime
-      val trRecorder = parentRecorder match {
-        case None => streamHandle.get.openRecorder(
-          getTypeName,
-          this.beginTime,
-          "Begin_No_Parent, Link")
+      this.trRecorder = parentRecorder match {
+        case None => streamHandle.get.openRecorder(getTypeName, this.beginTime, "Begin_No_Parent, Link")
         case Some(r) =>
-          val tr = streamHandle.get.openRecorder(
-            getTypeName,
-            this.beginTime,
-            "Begin_End, Link"
-          )
-          if (tr.nonEmpty) db.establishLink()
+          val tr = streamHandle.get.openRecorder(getTypeName, this.beginTime, "Begin_End, Link")
+          if (tr.nonEmpty) db.establishLink(SuvmParentChildLink.getLink(r, tr.get))
           tr
       }
-      ret = if (trRecorder.isEmpty) 0 else trRecorder.get.getHandle
+      if (trRecorder.isEmpty) 0 else trRecorder.get.getHandle
     } else {
       this.trRecorder = None
       this.endTime = -1
       this.beginTime = tmpTime
+      0
     }
     events.get("begin").trigger()
     ret
