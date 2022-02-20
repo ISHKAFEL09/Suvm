@@ -8,15 +8,18 @@ object SuvmCoreService {
   def getSuvmSeeding: Boolean = mUseUvmSeeding
   def setSuvmSeeding(enable: Boolean) = mUseUvmSeeding = enable
 
-  private var mCopier = new SuvmCopier("SuvmDefaultCopier")
+  private val mCopier = new SuvmCopier("SuvmDefaultCopier")
   def getDefaultCopier: SuvmCopier = mCopier
 
-  private var mComparer = new SuvmComparer("SuvmDefaultComparer")
+  private val mComparer = new SuvmComparer("SuvmDefaultComparer")
   def getDefaultComparer: SuvmComparer = mComparer
 
-  private var mPacker = new SuvmPacker("SuvmDefaultPacker")
+  private val mPacker = new SuvmPacker("SuvmDefaultPacker")
   def getDefaultPacker: SuvmPacker = mPacker
 
-  private var mPrinter = SuvmTablePrinter.getDefault
+  private val mPrinter = SuvmTablePrinter.getDefault
   def getDefaultPrinter: SuvmPrinter = mPrinter
+
+  private val reportServer = new SuvmDefaultReportServer
+  def getReportServer: SuvmReportServer = reportServer
 }

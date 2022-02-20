@@ -1,12 +1,17 @@
 package suvm
 
 import scala.util.Random
+import SuvmObjectGlobals._
 
 sealed abstract class SuvmVoid
 
 abstract class SuvmObject(val name: String = "") extends SuvmVoid {
   private var mLeafName = name
-  private val mInstId = { SuvmObject.mInstCount += 1; SuvmObject.mInstCount }
+  private val mInstId = {
+    val id = SuvmObject.getInstCount(this.getClass.getName) + 1
+    SuvmObject.setInstCount(this.getClass.getName, id)
+    id
+  }
   private lazy val rng = new Random()
 
   def createRandomSeed(typeId: String, instId: String): Int = {
@@ -33,7 +38,7 @@ abstract class SuvmObject(val name: String = "") extends SuvmVoid {
     SuvmFactory.findWrapperByName(getTypeName)
   def getInstId: Int = mInstId
 
-  def createObj(name: String): Option[SuvmObject]
+  def createObj(name: String): Option[SuvmObject] = None
   def cloneObj: Option[SuvmObject] = createObj(getName) flatMap { s => s.copyObj(Some(this)) }
 
   final def printObj(printer: Option[SuvmPrinter] = None): Unit = {
@@ -128,18 +133,18 @@ abstract class SuvmObject(val name: String = "") extends SuvmVoid {
   private def SuvmGetReportObject: Option[SuvmReportObject] = None
 }
 
-trait SuvmObjectTrait {
-  private[SuvmObject] var mInstCount: Int = 0
+object SuvmObject {
+  private val _mInstCountMap = collection.mutable.HashMap.empty[String, Int]
 
-  private[SuvmObject] def getInstCount: Int = mInstCount
+  def getInstCount(s: String): Int = _mInstCountMap.getOrElseUpdate(s, 0)
+  def setInstCount(s: String, i: Int): Unit = _mInstCountMap.update(s, i)
+
   // TODO factory type
   def getType: Option[SuvmObjectWrapper] = {
     SuvmReportError("NOTYPID", "get_type not implemented in derived class." , SuvmVerbosity.UVM_NONE)
     None
   }
 }
-
-object SuvmObject extends SuvmObjectTrait
 
 object SuvmObjectTest extends App {
 }

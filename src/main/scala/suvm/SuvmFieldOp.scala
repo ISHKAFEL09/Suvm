@@ -1,5 +1,7 @@
 package suvm
 
+import SuvmObjectGlobals._
+
 class SuvmFieldOp(name: String) extends SuvmObject(name) {
   def set(opType: SuvmOpcodeEnum.Value, policy: Option[SuvmPolicy] = None, rhs: Option[SuvmObject] = None): Unit
   def flush(): Unit
