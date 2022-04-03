@@ -22,4 +22,8 @@ object SuvmCoreService {
 
   private val reportServer = new SuvmDefaultReportServer
   def getReportServer: SuvmReportServer = reportServer
+
+  private var visitor: SuvmVisitor[SuvmComponent] = new SuvmComponentNameCheckVisitor("nameCheckVisitor")
+  def setComponentVisitor(v: SuvmVisitor[SuvmComponent]): Unit = visitor = v
+  def getComponentVisitor: SuvmVisitor[SuvmComponent] = visitor
 }

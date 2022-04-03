@@ -6,7 +6,7 @@ object SuvmCmdlineProcessor {
   private var _suvmArgs: AT = Seq.empty[String]
   private var _plusArgs: AT = Seq.empty[String]
 
-  class SuvmCmdlineProcessorImpl(name: String) extends SuvmReportObject(name) {
+  private class SuvmCmdlineProcessorImpl(val name: String) extends SuvmReportObject {
     def init(args: AT): Unit = {
       args foreach { i =>
         _args += i
@@ -40,7 +40,13 @@ object SuvmCmdlineProcessor {
     def getToolVersion: String = "0.1"
   }
 
-  private lazy val _inst: SuvmCmdlineProcessorImpl = new SuvmCmdlineProcessorImpl("SuvmCmdlineProc")
+  private var _inst: Option[SuvmCmdlineProcessorImpl] = None
 
-  def getInst: SuvmCmdlineProcessorImpl = _inst
+  def getInst(implicit config: SuvmConfig): SuvmCmdlineProcessorImpl = _inst match {
+    case Some(value) => value
+    case None =>
+      val i = new SuvmCmdlineProcessorImpl("SuvmCmdlineProc")
+      _inst = Some(i)
+      i
+  }
 }

@@ -7,11 +7,12 @@ import SuvmObjectGlobals.SuvmSeverity._
 import java.io.File
 import scala.collection.mutable
 
-abstract class SuvmReportServer(name: String) extends SuvmObject(name) {
+abstract class SuvmReportServer extends SuvmObject {
   def reportSummarize(f: File = new File(UVM_STDOUT)): Unit
+  def getSeverityCount(severity: SuvmSeverity.Value): Int
 }
 
-class SuvmDefaultReportServer(name: String = "SuvmReportServer") extends SuvmReportServer(name) {
+class SuvmDefaultReportServer(val name: String = "SuvmReportServer") extends SuvmReportServer {
   private var mMaxQuitCount = 0
   private var mQuitCount = 0
   private val mSeverityCount = collection.mutable.HashMap.empty[SuvmSeverity.Value, Int]
@@ -41,7 +42,7 @@ class SuvmDefaultReportServer(name: String = "SuvmReportServer") extends SuvmRep
     if (f.getName == UVM_STDOUT)
       suvmInfo("UVM/REPORT/SERVER", "UVM_STRING_QUEUE_STREAMING_PACK", UVM_NONE) // TODO:
     else {
-      val root = SuvmRoot.get
+      val root = SuvmRoot.getInst
       val action = root.getReportAction(UVM_INFO, "UVM/REPORT/SERVER")
       root.setReportIdAction("UVM/REPORT/SERVER", SuvmActionType.UVM_LOG)
       root.setReportIdFile("UVM/REPORT/SERVER", f)
@@ -49,6 +50,8 @@ class SuvmDefaultReportServer(name: String = "SuvmReportServer") extends SuvmRep
       root.setReportIdAction("UVM/REPORT/SERVER", action)
     }
   }
+
+  def getSeverityCount(severity: SuvmSeverity.Value): Int = mSeverityCount(severity)
 }
 
 object SuvmReportServer {

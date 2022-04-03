@@ -1,5 +1,5 @@
 package suvm
 
-class SuvmCallback(name: String) extends SuvmObject(name) {
+class SuvmCallback(val name: String = "")(implicit config: SuvmConfig) extends SuvmObject {
 
 }

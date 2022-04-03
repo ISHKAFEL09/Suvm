@@ -1,4 +1,5 @@
 import java.io.{File, FileWriter}
+import scala.language.implicitConversions
 import scala.util.Random
 
 package object suvm {
@@ -32,5 +33,9 @@ package object suvm {
 
   def suvmIsMatch(p: String, i: String): Boolean = {
     ("(?i)" + p.replaceFirst("^\\+", "\\\\+")).r matches i
+  }
+
+  def runTest(testName: String = "")(implicit config: SuvmConfig): Unit = {
+    SuvmRoot.get.runTest(testName)
   }
 }

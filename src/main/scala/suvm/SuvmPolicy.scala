@@ -1,6 +1,6 @@
 package suvm
 
-abstract class SuvmPolicy(name: String) extends SuvmObject(name) {
+abstract class SuvmPolicy extends SuvmObject {
   def getActiveObjectDepth: Boolean
   def flush(): Unit
 }

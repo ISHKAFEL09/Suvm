@@ -5,13 +5,11 @@ import SuvmObjectGlobals._
 
 sealed abstract class SuvmVoid
 
-abstract class SuvmObject(val name: String = "") extends SuvmVoid {
+abstract class SuvmObject extends SuvmVoid {
+  val name: String
   private var mLeafName = name
-  private val mInstId = {
-    val id = SuvmObject.getInstCount(this.getClass.getName) + 1
-    SuvmObject.setInstCount(this.getClass.getName, id)
-    id
-  }
+  private val mInstId =
+    SuvmObject.setInstCount(this.getClass.getName, SuvmObject.getInstCount(this.getClass.getName) + 1)
   private lazy val rng = new Random()
 
   def createRandomSeed(typeId: String, instId: String): Int = {
@@ -93,13 +91,13 @@ abstract class SuvmObject(val name: String = "") extends SuvmVoid {
     (mUnpackPost(mPacker), stream)
   }
   final def unPackBits(s: Seq[Boolean], packer: Option[SuvmPacker] = None): (Int, Seq[Boolean]) =
-    unPack[Boolean](s, packer)
+    unPack(s, packer)
   final def unPackBytes(s: Seq[Byte], packer: Option[SuvmPacker] = None): (Int, Seq[Byte]) =
-    unPack[Byte](s, packer)
+    unPack(s, packer)
   final def unPackInts(s: Seq[Int], packer: Option[SuvmPacker] = None): (Int, Seq[Int]) =
-    unPack[Int](s, packer)
+    unPack(s, packer)
   final def unPackLongs(s: Seq[Long], packer: Option[SuvmPacker] = None): (Int, Seq[Long]) =
-    unPack[Long](s, packer)
+    unPack(s, packer)
   def doUnpack(packer: SuvmPacker): Unit = {}
 
   def doExecuteOp(op: SuvmFieldOp): Unit = {}
@@ -137,11 +135,11 @@ object SuvmObject {
   private val _mInstCountMap = collection.mutable.HashMap.empty[String, Int]
 
   def getInstCount(s: String): Int = _mInstCountMap.getOrElseUpdate(s, 0)
-  def setInstCount(s: String, i: Int): Unit = _mInstCountMap.update(s, i)
+  def setInstCount(s: String, i: Int): Int = {_mInstCountMap.update(s, i); i}
 
   // TODO factory type
   def getType: Option[SuvmObjectWrapper] = {
-    SuvmReportError("NOTYPID", "get_type not implemented in derived class." , SuvmVerbosity.UVM_NONE)
+    suvmReportError("NOTYPID", "get_type not implemented in derived class." , SuvmVerbosity.UVM_NONE)
     None
   }
 }

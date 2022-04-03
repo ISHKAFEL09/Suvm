@@ -82,7 +82,21 @@ object SuvmObjectGlobals {
     val UVM_FATAL = Value
   }
 
-  def SuvmReportError(id: String, msg: String, verbosity: SuvmVerbosity.Value = SuvmVerbosity.UVM_NONE,
+  object SuvmPhaseState extends Enumeration {
+    val UVM_PHASE_UNINITIALIZED = Value(0)
+    val UVM_PHASE_DORMANT = Value(1)
+    val UVM_PHASE_SCHEDULED = Value(2)
+    val UVM_PHASE_SYNCING = Value(4)
+    val UVM_PHASE_STARTED = Value(8)
+    val UVM_PHASE_EXECUTING = Value(16)
+    val UVM_PHASE_READY_TO_END = Value(32)
+    val UVM_PHASE_ENDED = Value(64)
+    val UVM_PHASE_CLEANUP = Value(128)
+    val UVM_PHASE_DONE = Value(256)
+    val UVM_PHASE_JUMPING = Value(512)
+  }
+
+  def suvmReportError(id: String, msg: String, verbosity: SuvmVerbosity.Value = SuvmVerbosity.UVM_NONE,
                       fileName: String = "", line: Int = 0, contextName: String = "",
                       reportEnabledChecked: Boolean = false): Unit = {
     // TODO
@@ -99,6 +113,25 @@ object SuvmObjectGlobals {
                      line: Int,
                      contextName: String,
                      enabled: Boolean): Unit = ???
+
+  def suvmReportFatal(id: String,
+                     msg: String,
+                     verbosity: SuvmVerbosity.Value = SuvmVerbosity.UVM_NONE,
+                     filename: String = "",
+                     line: Int = 0,
+                     contextName: String = "",
+                     enabled: Boolean = false): Unit = ???
+
+  def suvmReportWarning(id: String,
+                        msg: String,
+                        verbosity: SuvmVerbosity.Value,
+                        filename: String,
+                        line: Int,
+                        contextName: String,
+                        enabled: Boolean): Unit = ???
+
+  def suvmWarning(id: String, msg: String): Unit =
+    SuvmMessage.suvmWarning(id, msg, suvmReportEnabled, suvmReportWarning)
 
   def suvmInfo(id: String, msg: String, verbosity: SuvmVerbosity.Value): Unit =
     SuvmMessage.suvmInfo(id, msg, verbosity, suvmReportEnabled, suvmReportInfo)
