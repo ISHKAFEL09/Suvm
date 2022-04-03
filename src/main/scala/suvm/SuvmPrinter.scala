@@ -2,7 +2,7 @@ package suvm
 
 import java.io.File
 
-abstract class SuvmPrinter(name: String) extends SuvmPolicy(name) {
+abstract class SuvmPrinter extends SuvmPolicy {
   private class PrinterKnobs {
     var mcd: Option[File] = None
     var showRoot: Boolean = false
@@ -18,7 +18,7 @@ abstract class SuvmPrinter(name: String) extends SuvmPolicy(name) {
   def emit: String = ""
 }
 
-class SuvmTablePrinter(name: String) extends SuvmPrinter(name) {
+class SuvmTablePrinter(val name: String) extends SuvmPrinter {
 
 }
 

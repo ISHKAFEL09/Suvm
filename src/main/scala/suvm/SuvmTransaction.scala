@@ -1,29 +1,31 @@
 package suvm
 
-abstract class SuvmTransaction(name: String, private[this] var initiator: Option[SuvmComponent] = None)
-  extends SuvmObject(name) {
+abstract class SuvmTransaction(initiator: Option[SuvmComponent] = None) extends SuvmObject {
+  import SuvmImplicits._
 
-  def doAcceptTr(): Unit
+  var _initiator: Option[SuvmComponent] = initiator
 
-  def doBeginTr(): Unit
+  def doAcceptTr(): Unit = {}
 
-  def doEndTr(): Unit
+  def doBeginTr(): Unit = {}
 
-  final def acceptTr(acceptTime: Time = 0): Unit = {
-    this.acceptTime = if (acceptTime != 0) acceptTime else realtime
+  def doEndTr(): Unit = {}
+
+  final def acceptTr(acceptTime: Time = 0.s): Unit = {
+    this.acceptTime = if (acceptTime.value != 0) acceptTime else realtime
     doAcceptTr()
     val e: SuvmEvent = events.get("accept")
-    e.trigger() // TODO
+    e.trigger() // TODO:
   }
 
-  final def beginTr(beginTime: Time = 0, parentHandle: Int = 0): Int =
+  final def beginTr(beginTime: Time = 0.s, parentHandle: Int = 0): Int =
     mBeginTr(beginTime, parentHandle)
 
-  final def beginChildTr(beginTime: Time = 0, parentHandle: Int = 0): Int =
+  final def beginChildTr(beginTime: Time = 0.s, parentHandle: Int = 0): Int =
     mBeginTr(beginTime, parentHandle)
 
-  final def endTr(endTime: Time = 0, freeHandle: Int = 1): Unit = {
-    this.endTime = if (endTime == 0) realtime else endTime
+  final def endTr(endTime: Time = 0.s, freeHandle: Int = 1): Unit = {
+    this.endTime = if (endTime.value == 0) realtime else endTime
     doEndTr()
     if (isRecordingEnabled && trRecorder.nonEmpty) {
       recordObj(trRecorder)
@@ -42,13 +44,13 @@ abstract class SuvmTransaction(name: String, private[this] var initiator: Option
 
   final def isRecordingEnabled: Boolean = streamHandle.nonEmpty
 
-  final def isActive: Boolean = endTime == -1
+  final def isActive: Boolean = endTime.value == -1
 
   final def getEventPool: SuvmEventPool = events
 
-  final def setInitiator(initiator: SuvmComponent): Unit = this.initiator = Some(initiator)
+  final def setInitiator(initiator: SuvmComponent): Unit = _initiator = Some(initiator)
 
-  final def getInitiator: Option[SuvmComponent] = this.initiator
+  final def getInitiator: Option[SuvmComponent] = _initiator
 
   final def getAcceptTime: Time = acceptTime
 
@@ -72,13 +74,13 @@ abstract class SuvmTransaction(name: String, private[this] var initiator: Option
     // TODO
   }
 
-  private def mBeginTr(beginTime: Time = 0, parentHandle: Int = 0): Int = {
-    val tmpTime: Time = if (beginTime == 0) realtime else beginTime
+  private def mBeginTr(beginTime: Time = 0.s, parentHandle: Int = 0): Int = {
+    val tmpTime: Time = if (beginTime.value == 0) realtime else beginTime
     val parentRecorder = SuvmRecorder.getRecorderFromHandle(parentHandle)
     if (trRecorder.nonEmpty) endTr(tmpTime)
     val ret = if (isRecordingEnabled) {
       val db: SuvmTrDatabase = streamHandle.get.getDb
-      this.endTime = -1
+      this.endTime = (-1).s
       this.beginTime = tmpTime
       this.trRecorder = parentRecorder match {
         case None => streamHandle.get.openRecorder(getTypeName, this.beginTime, "Begin_No_Parent, Link")
@@ -90,7 +92,7 @@ abstract class SuvmTransaction(name: String, private[this] var initiator: Option
       if (trRecorder.isEmpty) 0 else trRecorder.get.getHandle
     } else {
       this.trRecorder = None
-      this.endTime = -1
+      this.endTime = (-1).s
       this.beginTime = tmpTime
       0
     }
@@ -98,11 +100,11 @@ abstract class SuvmTransaction(name: String, private[this] var initiator: Option
     ret
   }
 
-  private val events = new SuvmEventPool
+  private val events = new SuvmEventPool("events")
   private var mTransactionId: Int = -1
-  private var beginTime: Time = -1
-  private var endTime: Time = -1
-  private var acceptTime: Time = -1
+  private var beginTime: Time = (-1).s
+  private var endTime: Time = (-1).s
+  private var acceptTime: Time = (-1).s
   private var streamHandle: Option[SuvmTrStream] = None
   private var trRecorder: Option[SuvmRecorder] = None
 }

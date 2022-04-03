@@ -1,10 +1,8 @@
 import java.io.{File, FileWriter}
-import scala.language.implicitConversions
 import scala.util.Random
 
 package object suvm {
-  implicit def Int2Time(x: Int): SuvmTime = new SuvmTime(x.toDouble)
-  implicit def Double2Time(x: Double): SuvmTime = new SuvmTime(x)
+  import SuvmImplicits._
 
   private[suvm] var realtime: Time = 0.ms
 

@@ -1,8 +1,8 @@
 package suvm
 
-abstract class SuvmEventBase(name: String) extends SuvmObject(name)
+abstract class SuvmEventBase extends SuvmObject
 
-abstract class SuvmEvent(name: String) extends SuvmEventBase(name) {
+abstract class SuvmEvent extends SuvmEventBase {
   type T <: SuvmObject
   def trigger(data: T = getDefaultData): Unit
 
