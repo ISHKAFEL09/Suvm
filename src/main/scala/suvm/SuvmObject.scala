@@ -65,6 +65,8 @@ abstract class SuvmObject extends SuvmVoid {
     None
   }
 
+  override def toString: String = getClass.getSimpleName
+
   /**
    * creation
    */
@@ -187,7 +189,7 @@ abstract class SuvmObject extends SuvmVoid {
    */
   def setLocal(rsrc: Option[SuvmResourceBase]): Unit = {
     if (rsrc.nonEmpty) {
-      val op = SuvmFieldOp.getAvailableOp
+      val op = SuvmFieldOp.mGetAvailableOp
       op.set(SuvmOpcodeEnum.UVM_SET, None, rsrc)
       doExecuteOp(op)
       op.mRecycle()

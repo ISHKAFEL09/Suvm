@@ -102,12 +102,12 @@ object SuvmObjectGlobals {
   def suvmReportError(id: String, msg: String, verbosity: SuvmVerbosity.Value = SuvmVerbosity.UVM_NONE,
                       fileName: String = "", line: Int = 0, contextName: String = "",
                       reportEnabledChecked: Boolean = false): Unit = {
-    // TODO
+    println(s"[$id] $msg")
   }
 
   def suvmReportEnabled(verbosity: SuvmVerbosity.Value,
                         severity: SuvmSeverity.Value,
-                        id: String): Boolean = ???
+                        id: String): Boolean = true
 
   def suvmReportInfo(id: String,
                      msg: String,
@@ -138,6 +138,9 @@ object SuvmObjectGlobals {
 
   def suvmInfo(id: String, msg: String, verbosity: SuvmVerbosity.Value): Unit =
     SuvmMessage.suvmInfo(id, msg, verbosity, suvmReportEnabled, suvmReportInfo)
+
+  def suvmError(id: String, msg: String): Unit =
+    SuvmMessage.suvmError(id, msg, suvmReportEnabled, suvmReportError)
 
   val UVM_STDOUT: String = "SuvmReport.log"
 }

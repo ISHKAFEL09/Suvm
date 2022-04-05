@@ -11,11 +11,16 @@ object SuvmImplicits {
 
   trait FieldOps[T] {
     def |(x: T): T
+    def &(x: T): T
   }
 
   implicit class SuvmOpcodeOps(op: SuvmOpcodeEnum.Value) extends FieldOps[SuvmOpcodeEnum.Value] {
     def |(x: SuvmOpcodeEnum.Value): SuvmObjectGlobals.SuvmOpcodeEnum.Value = new SuvmOpcodeEnum.Value {
       override def id: Int = op.id | x.id
+    }
+
+    def &(x: SuvmOpcodeEnum.Value): SuvmObjectGlobals.SuvmOpcodeEnum.Value = new SuvmOpcodeEnum.Value {
+      override def id: Int = op.id & x.id
     }
   }
 }

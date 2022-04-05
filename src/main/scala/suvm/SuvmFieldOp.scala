@@ -12,7 +12,16 @@ import scala.collection.mutable.ArrayBuffer
 class SuvmFieldOp(val name: String = "") extends SuvmObject {
   private var mIsSet: Boolean = false
   private var mUserHook: Boolean = true
+  private var mOpType: SuvmOpcodeEnum.Value = SuvmOpcodeEnum.UVM_DEFAULT
+  private var mPolicy: Option[SuvmPolicy] = None
+  private var mObject: Option[SuvmObject] = None
 
+  /**
+   * set the operation op_type, policy and rhs values
+   * @param opType
+   * @param policy
+   * @param rhs
+   */
   def set(opType: SuvmOpcodeEnum.Value, policy: Option[SuvmPolicy] = None, rhs: Option[SuvmObject] = None): Unit = {
     val matchingOps = ArrayBuffer.empty[String]
 
@@ -28,11 +37,66 @@ class SuvmFieldOp(val name: String = "") extends SuvmObject {
     testOps(UVM_UNPACK)
     testOps(UVM_SET)
 
-    println(matchingOps)
+    if (matchingOps.size > 1)
+      suvmError("UVM/FIELD_OP/SET_BAD_OP_TYPE",
+        "set() was passed op_type matching multiple operations: " + matchingOps.mkString("(", ", ", ")"))
+
+    if (!mIsSet) {
+      mOpType = opType
+      mPolicy = policy
+      mObject = rhs
+      mIsSet = true
+    } else {
+      suvmError("UVM/FIELD_OP/SET","Attempting to set values in policy without flushing")
+    }
   }
 
-  def flush(): Unit =
-    ???
+  def getOpName: String = {
+    import SuvmOpcodeEnum._
+    mOpType match {
+      case UVM_COPY => "copy"
+      case UVM_COMPARE => "compare"
+      case UVM_PRINT => "print"
+      case UVM_RECORD => "record"
+      case UVM_PACK => "pack"
+      case UVM_UNPACK => "unpack"
+      case UVM_SET => "set"
+      case _ => ""
+    }
+  }
+
+  def getOpType: Option[SuvmOpcodeEnum.Value] =
+    if (mIsSet) Some(mOpType) else {
+      suvmError("UVM/FIELD_OP/GET_OP_TYPE","Calling get_op_type() before calling set() is not allowed")
+      None
+    }
+
+  def getPolicy: Option[SuvmPolicy] =
+    if (mIsSet) mPolicy else {
+      suvmError("UVM/FIELD_OP/GET_POLICY","Calling getPolicy() before calling set() is not allowed")
+      None
+    }
+
+  def getRhs: Option[SuvmObject] =
+    if (mIsSet) mObject else {
+      suvmError("UVM/FIELD_OP/GET_RHS","Calling getRhs() before calling set() is not allowed")
+      None
+    }
+
+  def userHookEnabled: Boolean = {
+    if (!mIsSet)
+      suvmError("UVM/FIELD_OP/GET_USER_HOOK","Calling userHookEnabled() before calling set() is not allowed")
+    mUserHook
+  }
+
+  def disableUserHook(): Unit = mUserHook = false
+
+  def flush(): Unit = {
+    mPolicy = None
+    mObject = None
+    mUserHook = true
+    mIsSet = false
+  }
 
   def mRecycle(): Unit = {
     flush()
@@ -43,7 +107,7 @@ class SuvmFieldOp(val name: String = "") extends SuvmObject {
 object SuvmFieldOp {
   private val mRecycledOp = scala.collection.mutable.Queue.empty[SuvmFieldOp]
 
-  def getAvailableOp: SuvmFieldOp = {
+  def mGetAvailableOp: SuvmFieldOp = {
     if (mRecycledOp.nonEmpty) mRecycledOp.dequeue()
     else new SuvmFieldOp("FieldOp")
   }

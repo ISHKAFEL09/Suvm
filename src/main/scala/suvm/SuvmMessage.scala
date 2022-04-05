@@ -27,4 +27,14 @@ object SuvmMessage {
       reportWarn(id, msg, SuvmVerbosity.UVM_NONE, "", 0, "", true)
     }
   }
+
+  def suvmError(id: String,
+                  msg: String,
+                  reportEnabled: (SuvmVerbosity.Value, SuvmSeverity.Value, String) => Boolean,
+                  reportError: (String, String, SuvmVerbosity.Value, String, Int, String, Boolean) => Unit
+                 ): Unit = {
+    if (reportEnabled(SuvmVerbosity.UVM_NONE, SuvmSeverity.UVM_WARNING, id)) {
+      reportError(id, msg, SuvmVerbosity.UVM_NONE, "", 0, "", true)
+    }
+  }
 }
