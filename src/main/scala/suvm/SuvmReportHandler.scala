@@ -1,5 +1,5 @@
 package suvm
 
-class SuvmReportHandler(name: String) extends SuvmObject {
+class SuvmReportHandler(val name: String) extends SuvmObject {
 
 }

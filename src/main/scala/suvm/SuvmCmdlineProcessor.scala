@@ -1,12 +1,19 @@
 package suvm
 
-object SuvmCmdlineProcessor {
-  type AT = Seq[String]
-  private var _args: AT = Seq.empty[String]
-  private var _suvmArgs: AT = Seq.empty[String]
-  private var _plusArgs: AT = Seq.empty[String]
+import scala.collection.mutable.ArrayBuffer
 
-  private class SuvmCmdlineProcessorImpl(val name: String) extends SuvmReportObject {
+trait SuvmCmdlineProcessor extends SuvmReportObject {
+  type AT = ArrayBuffer[String]
+
+  def getArgMatches(pattern: String): AT
+}
+
+object SuvmCmdlineProcessor {
+  private class SuvmCmdlineProcessorImpl(val name: String) extends SuvmCmdlineProcessor {
+    private var _args = ArrayBuffer.empty[String]
+    private var _suvmArgs = ArrayBuffer.empty[String]
+    private var _plusArgs = ArrayBuffer.empty[String]
+
     def init(args: AT): Unit = {
       args foreach { i =>
         _args += i
@@ -42,7 +49,7 @@ object SuvmCmdlineProcessor {
 
   private var _inst: Option[SuvmCmdlineProcessorImpl] = None
 
-  def getInst(implicit config: SuvmConfig): SuvmCmdlineProcessorImpl = _inst match {
+  def getInst(implicit config: SuvmConfig): SuvmCmdlineProcessor = _inst match {
     case Some(value) => value
     case None =>
       val i = new SuvmCmdlineProcessorImpl("SuvmCmdlineProc")

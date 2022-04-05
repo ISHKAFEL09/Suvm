@@ -3,14 +3,30 @@ package suvm
 import scala.util.Random
 import SuvmObjectGlobals._
 
-sealed abstract class SuvmVoid
+/**
+ * base class for all Suvm classes
+ */
+abstract class SuvmVoid
 
+/**
+ * The SuvmObject class is the abstract base class for all SUVM data and hierarchical classes.
+ * Its primary role is to define a set of methods for such common operations as create, copy,
+ * compare, print, and record.
+ * Classes deriving from SuvmObject need to implement the abstract methods such as create and getTypeName.
+ */
 abstract class SuvmObject extends SuvmVoid {
   val name: String
-  private var mLeafName = name
-  private val mInstId =
-    SuvmObject.setInstCount(this.getClass.getName, SuvmObject.getInstCount(this.getClass.getName) + 1)
+
+  /**
+   * seeding
+   */
   private lazy val rng = new Random()
+
+  def getSuvmSeeding: Boolean = SuvmCoreService.getSuvmSeeding
+
+  def setSuvmSeeding(enable: Boolean): Unit = SuvmCoreService.setSuvmSeeding(enable)
+
+  def reseed(): Unit = if (getSuvmSeeding) rng.setSeed(createRandomSeed(getTypeName, getFullName))
 
   def createRandomSeed(typeId: String, instId: String): Int = {
     val mInstId = if (instId.isEmpty) "__global__" else instId
@@ -23,27 +39,48 @@ abstract class SuvmObject extends SuvmVoid {
     seedMap.seedTable(mTypeId)
   }
 
-  def getSuvmSeeding: Boolean = SuvmCoreService.getSuvmSeeding
-  def setSuvmSeeding(enable: Boolean): Unit = SuvmCoreService.setSuvmSeeding(enable)
-
-  def reseed(): Unit = if (getSuvmSeeding) rng.setSeed(createRandomSeed(getTypeName, getFullName))
+  /**
+   * identification
+   */
+  private var mLeafName = name
+  private val mInstId = {
+    SuvmObject.setInstCount(this.getClass.getName, SuvmObject.getInstCount(this.getClass.getName) + 1)
+  }
 
   def setName(name: String): Unit = mLeafName = name
+
   def getName: String = mLeafName
+
   def getFullName: String = getName
+
   def getTypeName: String = "<unknown>"
+
   def getObjectType: Option[SuvmObjectWrapper] = if (getTypeName == "<unknown>") None else
     SuvmFactory.findWrapperByName(getTypeName)
+
   def getInstId: Int = mInstId
 
+  def getType: Option[SuvmObjectWrapper] = {
+    suvmReportError("NOTYPID", "get_type not implemented in derived class." , SuvmVerbosity.UVM_NONE)
+    None
+  }
+
+  /**
+   * creation
+   */
   def createObj(name: String): Option[SuvmObject] = None
+
   def cloneObj: Option[SuvmObject] = createObj(getName) flatMap { s => s.copyObj(Some(this)) }
 
-  final def printObj(printer: Option[SuvmPrinter] = None): Unit = {
+  /**
+   * printing
+   */
+  def printObj(printer: Option[SuvmPrinter] = None): Unit = {
     val mPrinter = printer getOrElse SuvmPrinter.getDefault
     fWrite(mPrinter.getFile, sPrintObj(Some(mPrinter)))
   }
-  final def sPrintObj(printer: Option[SuvmPrinter] = None): String = {
+
+  def sPrintObj(printer: Option[SuvmPrinter] = None): String = {
     val mPrinter = printer getOrElse SuvmPrinter.getDefault
     val name: String = if (!mPrinter.getActiveObjectDepth) {
       mPrinter.flush()
@@ -52,37 +89,77 @@ abstract class SuvmObject extends SuvmVoid {
     mPrinter.printObject(name, this)
     mPrinter.emit
   }
+
   def doPrint(printer: SuvmPrinter): Unit = {}
+
   def convert2String: String = ""
 
-  final def recordObj(recorder: Option[SuvmRecorder] = None): Unit = {}
+  /**
+   * recording
+   */
+  def recordObj(recorder: Option[SuvmRecorder] = None): Unit = {}
+
   def doRecord(recorder: SuvmRecorder): Unit = {}
 
+  /**
+   * copying
+   */
   final def copyObj(rhs: Option[SuvmObject], copier: Option[SuvmCopier] = None): Option[SuvmObject] = rhs flatMap { i =>
-      val mCopier = copier getOrElse SuvmCoreService.getDefaultCopier
-      mCopier.copyObject(this, i)
+    val mCopier = copier getOrElse SuvmCoreService.getDefaultCopier
+    mCopier.copyObject(this, i)
   }
+
   def doCopy(rhs: SuvmObject): Unit = {}
 
+  /**
+   * comparing
+   */
   final def compareObj(rhs: SuvmObject, comparer: Option[SuvmComparer] = None): Boolean = {
     val mComparer = comparer getOrElse SuvmComparer.getDefault
     if (!mComparer.getActiveObjectDepth) mComparer.flush()
     mComparer.compareObject(getName, this, rhs)
   }
+
   def doCompare(rhs: SuvmObject, comparer: SuvmComparer): Boolean = true
+
+  /**
+   * packing
+   */
+  private def mPack(packer: Option[SuvmPacker]): SuvmPacker = {
+    val mPacker = packer getOrElse SuvmPacker.getDefault
+    if (mPacker.getActiveObjectDepth) mPacker.flush()
+    mPacker.packObject(this)
+  }
+
+  private def mUnpackPre(packer: Option[SuvmPacker]): SuvmPacker = {
+    val mPacker = if (packer.isEmpty) SuvmPacker.getDefault else packer.get
+    if (mPacker.getActiveObjectDepth) mPacker.flush()
+    mPacker
+  }
+
+  private def mUnpackPost(packer: SuvmPacker): Int = {
+    val sizeBeforeUnpack = packer.getPackedSize
+    packer.unPackObject(this)
+    sizeBeforeUnpack - packer.getPackedSize
+  }
 
   private def packObj[T](packer: Option[SuvmPacker] = None, f: SuvmPacker => Seq[T]): (Int, Seq[T]) = {
     val mPacker = mPack(packer)
     (mPacker.getPackedSize, f(mPacker))
   }
+
   final def packBits(packer: Option[SuvmPacker] = None): (Int, Seq[Boolean]) =
     packObj(packer, p => p.getPackedBool)
+
   final def packBytes(packer: Option[SuvmPacker] = None): (Int, Seq[Byte]) =
     packObj(packer, p => p.getPackedByte)
+
   final def packInts(packer: Option[SuvmPacker] = None): (Int, Seq[Int]) =
     packObj(packer, p => p.getPackedInt)
+
   final def packLongs(packer: Option[SuvmPacker] = None): (Int, Seq[Long]) =
     packObj(packer, p => p.getPackedLong)
+
   def doPack(packer: SuvmPacker): Unit = {}
 
   private def unPack[T](s: Seq[T], packer: Option[SuvmPacker] = None): (Int, Seq[T]) = {
@@ -90,18 +167,24 @@ abstract class SuvmObject extends SuvmVoid {
     val stream = mPacker.setPacked[T](s)
     (mUnpackPost(mPacker), stream)
   }
+
   final def unPackBits(s: Seq[Boolean], packer: Option[SuvmPacker] = None): (Int, Seq[Boolean]) =
     unPack(s, packer)
+
   final def unPackBytes(s: Seq[Byte], packer: Option[SuvmPacker] = None): (Int, Seq[Byte]) =
     unPack(s, packer)
+
   final def unPackInts(s: Seq[Int], packer: Option[SuvmPacker] = None): (Int, Seq[Int]) =
     unPack(s, packer)
+
   final def unPackLongs(s: Seq[Long], packer: Option[SuvmPacker] = None): (Int, Seq[Long]) =
     unPack(s, packer)
+
   def doUnpack(packer: SuvmPacker): Unit = {}
 
-  def doExecuteOp(op: SuvmFieldOp): Unit = {}
-
+  /**
+   * configuration
+   */
   def setLocal(rsrc: Option[SuvmResourceBase]): Unit = {
     if (rsrc.nonEmpty) {
       val op = SuvmFieldOp.getAvailableOp
@@ -110,39 +193,33 @@ abstract class SuvmObject extends SuvmVoid {
       op.mRecycle()
     }
   }
-  private def mUnsupportedSetLocal(rsrc: SuvmResourceBase): Unit = {}
 
-  private def mPack(packer: Option[SuvmPacker]): SuvmPacker = {
-    val mPacker = packer getOrElse SuvmPacker.getDefault
-    if (mPacker.getActiveObjectDepth) mPacker.flush()
-    mPacker.packObject(this)
-  }
-  private def mUnpackPre(packer: Option[SuvmPacker]): SuvmPacker = {
-    val mPacker = if (packer.isEmpty) SuvmPacker.getDefault else packer.get
-    if (mPacker.getActiveObjectDepth) mPacker.flush()
-    mPacker
-  }
-  private def mUnpackPost(packer: SuvmPacker): Int = {
-    val sizeBeforeUnpack = packer.getPackedSize
-    packer.unPackObject(this)
-    sizeBeforeUnpack - packer.getPackedSize
-  }
-  private def _mSuvmFieldAutomation(tmpData: SuvmObject, str: String): Unit = {}
-  private def SuvmGetReportObject: Option[SuvmReportObject] = None
+  /**
+   * field operations
+   */
+  def doExecuteOp(op: SuvmFieldOp): Unit = {}
 }
 
 object SuvmObject {
   private val _mInstCountMap = collection.mutable.HashMap.empty[String, Int]
 
+  def listObj(): Unit = println(_mInstCountMap)
   def getInstCount(s: String): Int = _mInstCountMap.getOrElseUpdate(s, 0)
   def setInstCount(s: String, i: Int): Int = {_mInstCountMap.update(s, i); i}
-
-  // TODO factory type
-  def getType: Option[SuvmObjectWrapper] = {
-    suvmReportError("NOTYPID", "get_type not implemented in derived class." , SuvmVerbosity.UVM_NONE)
-    None
-  }
 }
 
 object SuvmObjectTest extends App {
+  SuvmObject.listObj()
+
+  class Scoreboard extends SuvmObject {
+    val name = "Scoreboard"
+  }
+
+  val obj = new Scoreboard
+
+  SuvmObject.listObj()
+
+  val obj1 = new Scoreboard
+
+  SuvmObject.listObj()
 }

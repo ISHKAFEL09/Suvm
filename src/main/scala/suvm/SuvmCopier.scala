@@ -1,7 +1,7 @@
 package suvm
 
-class SuvmCopier(name: String) extends SuvmPolicy(name) {
-  def copyObject(lhs: SuvmObject, rhs: SuvmObject): Option[SuvmObject]
+class SuvmCopier(val name: String) extends SuvmPolicy {
+  def copyObject(lhs: SuvmObject, rhs: SuvmObject): Option[SuvmObject] = ???
 
   override def createObj(name: String): Option[SuvmObject] = ???
 

@@ -2,18 +2,28 @@ package suvm
 
 import SuvmObjectGlobals._
 import SuvmObjectGlobals.SuvmCoreState._
+
 import java.io.File
 import scala.collection.mutable.ArrayBuffer
+import scala.concurrent.duration.Duration
+import scala.concurrent.{Await, Promise}
+
+trait SuvmRoot extends SuvmComponent {
+  var phaseTimeout: Time = SuvmDefaultTimeout
+  var finishOnCompletion: Boolean = true
+  val mPhaseAllDone: Promise[Unit] = Promise[Unit]
+  override def getTypeName: String = "SuvmRoot"
+  def runTest(testName: String): Unit
+}
 
 object SuvmRoot {
-  private class SuvmRootImpl(val name: String)(implicit config: SuvmConfig) extends SuvmComponent {
-    var phaseTimeout: Time = SuvmDefaultTimeout
-    var finishOnCompletion: Boolean = true
-    private var mPhaseAllDone: Boolean = false
+  private class SuvmRootImpl(val name: String)(implicit config: SuvmConfig) extends SuvmRoot {
+    /** simulation control
+     */
+    def runTest(testName: String): Unit = {
 
-    override def getTypeName: String = "SuvmRoot"
-
-    def runTest(testName: String): Unit = {}
+      Await.result(mPhaseAllDone.future, Duration.Inf)
+    }
 
     def die(): Unit = {
       if (!(mSuvmCoreState == UVM_CORE_PRE_ABORT || mSuvmCoreState == UVM_CORE_ABORTED)) {
@@ -31,6 +41,9 @@ object SuvmRoot {
 
     def getFinishOnCompletion: Boolean = finishOnCompletion
 
+    /**
+     * topology
+     */
     def find(compMatch: String): SuvmComponent =
       ???
 
@@ -59,7 +72,7 @@ object SuvmRoot {
       val p = new SuvmComponentProxy("proxy")
       val adapter = new SuvmTopDownVisitorAdapter("adapter")
       val v = SuvmCoreService.getComponentVisitor
-      adapter.accept(get, v, p)
+      adapter.accept(getInst, v, p)
     }
 
     def reportHeader(file: Option[File] = None): Unit = {
@@ -68,21 +81,34 @@ object SuvmRoot {
 
       if (args.isEmpty) {
         if (!mRelnotesDone) {
-          q += "\\n  ***********       IMPORTANT RELEASE NOTES         ************\\n"
+          q += "\n  ***********       IMPORTANT RELEASE NOTES         ************\n"
           mRelnotesDone = true
+          q += "\n  This implementation of the UVM Library deviates from the 1800.2-2020\n"
+          q += "  standard.  See the DEVIATIONS.md file contained in the release\n"
+          q += "  for more details.\n"
           if (config.SUVM_ENABLE_DEPRECATED_API) {
-
+            q += "\n  You are using a version of the UVM library that has been compiled\n"
+            q += "  with `UVM_ENABLE_DEPRECATED_API defined.\n"
+            q += "  See https://accellera.mantishub.io/view.php?id=5072 for more details.\n"
           }
+          q += "\n----------------------------------------------------------------\n"
+          q += s"$SUVM_REVERSION\n"
+          q += "\n"
+          q += "All copyright owners for this kit are listed in NOTICE.txt\n"
+          q += "All Rights Reserved Worldwide\n"
+          q += "----------------------------------------------------------------\n"
+          if (mRelnotesDone)
+            q += "\n      (Specify +UVM_NO_RELNOTES to turn off this notice)\n"
         }
       }
       suvmInfo("UVM/RELNOTES", q.mkString, SuvmVerbosity.UVM_LOW)
     }
 
-    private def mDoCmdlineChecks(): Unit = ???
+    def mDoCmdlineChecks(): Unit = ???
 
-    private def mDoClInst(): Unit = {}
+    def mDoClInst(): Unit = {}
 
-    private def mFindAllRecurse(compMatch: String, comp: Option[SuvmComponent] = None): List[SuvmComponent] =
+    def mFindAllRecurse(compMatch: String, comp: Option[SuvmComponent] = None): List[SuvmComponent] =
       ???
 
     setReportHandler(new SuvmReportHandler("reporter"))
@@ -90,17 +116,19 @@ object SuvmRoot {
     mSetClMsgArgs()
   }
 
-  private var root: Option[SuvmRootImpl] = None
+  private var root: Option[SuvmRoot] = None
   private var enablePrintTopology: Boolean = false
   private var mRelnotesDone: Boolean = false
 
-  def getInst: SuvmRootImpl = root.getOrElse(throw new RuntimeException("no root"))
+  private[suvm] def getInst: SuvmRoot = root.getOrElse(throw new RuntimeException("no root"))
 
-  def get(implicit config: SuvmConfig): SuvmRootImpl = root match {
+  private[suvm] def init(implicit config: SuvmConfig): SuvmRoot = root match {
     case Some(value) => value
     case None =>
       val r = new SuvmRootImpl("__top__")
       root = Some(r)
       r
   }
+
+  def get(): Unit = getInst
 }

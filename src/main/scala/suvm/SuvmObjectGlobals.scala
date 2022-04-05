@@ -19,25 +19,28 @@ object SuvmObjectGlobals {
   }
 
   object SuvmOpcodeEnum extends Enumeration {
-    val UVM_COPY = Value
-    val UVM_NOCOPY = Value
-    val UVM_COMPARE = Value
-    val UVM_NOCOMPARE = Value
-    val UVM_PRINT = Value
-    val UVM_NOPRINT = Value
-    val UVM_RECORD = Value
-    val UVM_NORECORD = Value
-    val UVM_PACK = Value
-    val UVM_NOPACK = Value
-    val UVM_UNPACK = Value
-    val UVM_NOUNPACK = Value
-    val UVM_SET = Value
-    val UVM_NOSET = Value
-    val UVM_NODEFPRINT = Value
-    val UVM_FLAGS_ON = Value
-    val UVM_FLAGS_OFF = Value
+    val UVM_COPY = Value(1 << 0)
+    val UVM_NOCOPY = Value(1 << 1)
+    val UVM_COMPARE = Value(1 << 2)
+    val UVM_NOCOMPARE = Value(1 << 3)
+    val UVM_PRINT = Value(1 << 4)
+    val UVM_NOPRINT = Value(1 << 5)
+    val UVM_RECORD = Value(1 << 6)
+    val UVM_NORECORD = Value(1 << 7)
+    val UVM_PACK = Value(1 << 8)
+    val UVM_NOPACK = Value(1 << 9)
+    val UVM_UNPACK = Value(1 << 10)
+    val UVM_NOUNPACK = UVM_NOPACK
+    val UVM_SET = Value(1 << 11)
+    val UVM_NOSET = Value(1 << 12)
+    val UVM_NODEFPRINT = Value(1 << 15)
+    val UVM_FLAGS_ON = Value(UVM_COPY.id | UVM_COMPARE.id | UVM_PRINT.id |
+                             UVM_RECORD.id | UVM_PACK.id | UVM_UNPACK.id | UVM_SET.id)
+    val UVM_FLAGS_OFF = Value(0)
     val UVM_ALL_ON = UVM_FLAGS_ON
     val UVM_DEFAULT = UVM_ALL_ON
+
+    def hasOp(op: Value, i: Value): Boolean = (op.id & i.id) != 0
   }
 
   object SuvmVerbosity extends Enumeration {

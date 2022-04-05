@@ -1,16 +1,21 @@
 package suvm
 
-import java.io.File
+import suvm.SuvmObjectGlobals._
+
 import scala.language.implicitConversions
 
-case class SuvmConfig(SUVM_ENABLE_DEPRECATED_API: Boolean)
-
 object SuvmImplicits {
-  private def getConfigFromFile(cfg: String): SuvmConfig = ???
-
-  implicit val suvmDefaultConfig: SuvmConfig = getConfigFromFile("suvm.conf")
-
   implicit def Int2Time(x: Int): SuvmTime = new SuvmTime(x.toDouble)
 
   implicit def Double2Time(x: Double): SuvmTime = new SuvmTime(x)
+
+  trait FieldOps[T] {
+    def |(x: T): T
+  }
+
+  implicit class SuvmOpcodeOps(op: SuvmOpcodeEnum.Value) extends FieldOps[SuvmOpcodeEnum.Value] {
+    def |(x: SuvmOpcodeEnum.Value): SuvmObjectGlobals.SuvmOpcodeEnum.Value = new SuvmOpcodeEnum.Value {
+      override def id: Int = op.id | x.id
+    }
+  }
 }

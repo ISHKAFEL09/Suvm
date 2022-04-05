@@ -1,7 +1,8 @@
 package suvm
 
-class SuvmComparer(name: String) extends SuvmPolicy(name) {
-  def compareObject(name: String, lsh: SuvmObject, rhs: SuvmObject): Boolean
+class SuvmComparer(val name: String) extends SuvmPolicy {
+  def compareObject(name: String, lsh: SuvmObject, rhs: SuvmObject): Boolean =
+    ???
 }
 
 object SuvmComparer {

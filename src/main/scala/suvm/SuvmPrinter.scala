@@ -13,7 +13,7 @@ abstract class SuvmPrinter extends SuvmPolicy {
 
   def getRootEnabled: Boolean = knobs.showRoot
 
-  def printObject(name: String, value: SuvmObject, scopeSeparator: Char = '.'): Unit
+  def printObject(name: String, value: SuvmObject, scopeSeparator: Char = '.'): Unit = ???
 
   def emit: String = ""
 }

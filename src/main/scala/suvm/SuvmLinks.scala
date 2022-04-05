@@ -1,13 +1,14 @@
 package suvm
 
-abstract class SuvmLinkBase(name: String) extends SuvmObject(name) {
+abstract class SuvmLinkBase extends SuvmObject {
 
 }
 
-class SuvmParentChildLink(name: String) extends SuvmLinkBase(name) {
+class SuvmParentChildLink(val name: String) extends SuvmLinkBase {
 
 }
 
 object SuvmParentChildLink {
-  def getLink(lhs: SuvmObject, rhs: SuvmObject, name: String = "PcLink"): SuvmParentChildLink
+  def getLink(lhs: SuvmObject, rhs: SuvmObject, name: String = "PcLink"): SuvmParentChildLink =
+    ???
 }

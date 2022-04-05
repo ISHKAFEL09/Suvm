@@ -2,6 +2,10 @@ import java.io.{File, FileWriter}
 import scala.util.Random
 
 package object suvm {
+  val SUVM_REVERSION = "SUVM:1.0"
+
+  case class SuvmConfig(SUVM_ENABLE_DEPRECATED_API: Boolean)
+
   import SuvmImplicits._
 
   private[suvm] var realtime: Time = 0.ms
@@ -34,6 +38,8 @@ package object suvm {
   }
 
   def runTest(testName: String = "")(implicit config: SuvmConfig): Unit = {
-    SuvmRoot.get.runTest(testName)
+    SuvmRoot.init.runTest(testName)
   }
+
+  val SuvmTop: SuvmRoot = SuvmRoot.getInst
 }
