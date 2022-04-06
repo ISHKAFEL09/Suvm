@@ -1,77 +1,122 @@
 package suvm
 
-abstract class SuvmTransaction(initiator: Option[SuvmComponent] = None) extends SuvmObject {
-  import SuvmImplicits._
+import SuvmImplicits._
+import SuvmObjectGlobals._
 
+/**
+ * root base class for SUVM transactions.
+ * Inheriting all the methods of SuvmObject, SuvmTransaction adds a timing and recording interface.
+ */
+abstract class SuvmTransaction(val name: String = "", initiator: Option[SuvmComponent] = None) extends SuvmObject {
   var _initiator: Option[SuvmComponent] = initiator
+
+  /**
+   * Calling accept_tr indicates the transaction item has been received by a consumer component
+   */
+  def acceptTr(acceptTime: Time = 0.s): Unit = {
+    this.acceptTime = if (acceptTime.value != 0) acceptTime else realtime
+    doAcceptTr()
+    events.get("accept").trigger() // TODO:
+  }
 
   def doAcceptTr(): Unit = {}
 
+  /**
+   * indicates the transaction has been started.
+   * Generally, a consumer component begins execution of a transactions it receives.
+   */
+  def beginTr(beginTime: Time = 0.s, parentHandle: Int = 0): Int = mBeginTr(beginTime, parentHandle)
+
+//  def beginChildTr(beginTime: Time = 0.s, parentHandle: Int = 0): Int = mBeginTr(beginTime, parentHandle)
+
   def doBeginTr(): Unit = {}
 
-  def doEndTr(): Unit = {}
-
-  final def acceptTr(acceptTime: Time = 0.s): Unit = {
-    this.acceptTime = if (acceptTime.value != 0) acceptTime else realtime
-    doAcceptTr()
-    val e: SuvmEvent = events.get("accept")
-    e.trigger() // TODO:
-  }
-
-  final def beginTr(beginTime: Time = 0.s, parentHandle: Int = 0): Int =
-    mBeginTr(beginTime, parentHandle)
-
-  final def beginChildTr(beginTime: Time = 0.s, parentHandle: Int = 0): Int =
-    mBeginTr(beginTime, parentHandle)
-
-  final def endTr(endTime: Time = 0.s, freeHandle: Int = 1): Unit = {
+  /**
+   * indicates the transaction execution has ended
+   */
+  def endTr(endTime: Time = 0.s, freeHandle: Boolean = true): Unit = {
     this.endTime = if (endTime.value == 0) realtime else endTime
     doEndTr()
     if (isRecordingEnabled && trRecorder.nonEmpty) {
       recordObj(trRecorder)
       trRecorder.get.close(this.endTime)
-      if (freeHandle != 0) trRecorder.get.free()
+      if (freeHandle) trRecorder.get.free()
     }
     trRecorder = None
     events.get("end").trigger()
   }
 
-  final def getTrHandle: Int = if (trRecorder.isEmpty) 0 else trRecorder.get.getHandle
+  def doEndTr(): Unit = {}
 
-  final def disableRecording(): Unit = streamHandle = None
+  def getTrHandle: Int = if (trRecorder.isEmpty) 0 else trRecorder.get.getHandle
 
-  final def enableRecording(trStream: SuvmTrStream): Unit = streamHandle = Some(trStream)
+  def disableRecording(): Unit = streamHandle = None
 
-  final def isRecordingEnabled: Boolean = streamHandle.nonEmpty
+  def enableRecording(trStream: SuvmTrStream): Unit = streamHandle = Some(trStream)
 
-  final def isActive: Boolean = endTime.value == -1
+  def isRecordingEnabled: Boolean = streamHandle.nonEmpty
 
-  final def getEventPool: SuvmEventPool = events
+  def isActive: Boolean = endTime.value == -1
 
-  final def setInitiator(initiator: SuvmComponent): Unit = _initiator = Some(initiator)
+  def getEventPool: SuvmEventPool = events
 
-  final def getInitiator: Option[SuvmComponent] = _initiator
+  def setInitiator(initiator: SuvmComponent): Unit = _initiator = Some(initiator)
 
-  final def getAcceptTime: Time = acceptTime
+  def getInitiator: Option[SuvmComponent] = _initiator
 
-  final def getBeginTime: Time = beginTime
+  def getAcceptTime: Time = acceptTime
 
-  final def getEndTime: Time = endTime
+  def getBeginTime: Time = beginTime
 
-  final def setTransactionId(id: Int): Unit = mTransactionId = id
+  def getEndTime: Time = endTime
 
-  final def getTransactionId: Int = mTransactionId
+  def setTransactionId(id: Int): Unit = mTransactionId = id
 
-  override def doPrint(printer: SuvmPrinter): Unit = {
-    // TODO
+  def getTransactionId: Int = mTransactionId
+
+  /**
+   * Internal methods properties; do not use directly
+   */
+  override def doPrint(printer: Some[SuvmPrinter]): Unit = {
+    if (printer.nonEmpty) {
+      val p = printer.get
+      if (acceptTime.value == -1) p.printTime("accept_time", acceptTime)
+      if (beginTime.value == -1) p.printTime("begin_time", beginTime)
+      if (endTime.value == -1) p.printTime("end_time", endTime)
+      if (_initiator.nonEmpty) {
+        val str = s"@${_initiator.get.getInstId}"
+        p.printGeneric("initiator", _initiator.get.getTypeName, -1, str)
+      }
+    }
   }
 
-  override def doRecord(recorder: SuvmRecorder): Unit = {
-    // TODO
+  override def doRecord(recorder: Some[SuvmRecorder]): Unit = {
+    if (recorder.nonEmpty) {
+      val r = recorder.get
+      if (acceptTime.value != -1)
+        r.recordField("accept_time", acceptTime, acceptTime.bitLength, SuvmRadixEnum.UVM_TIME)
+      if (_initiator.nonEmpty) {
+        val p = r.getRecursionPolicy
+        r.setRecursionPolicy(SuvmRecursionPolicy.UVM_REFERENCE)
+        r.recordObject("initiator", _initiator.get)
+        r.setRecursionPolicy(p)
+      }
+    }
   }
 
-  override def doCopy(rhs: SuvmObject): Unit = {
-    // TODO
+  override def doCopy(rhs: Some[SuvmObject]): Unit = {
+    if (rhs.nonEmpty) {
+      rhs.get match {
+        case t: SuvmTransaction =>
+          acceptTime = t.acceptTime
+          beginTime = t.beginTime
+          endTime = t.endTime
+          _initiator = t._initiator
+          streamHandle = t.streamHandle
+          trRecorder = t.trRecorder
+        case _ =>
+      }
+    }
   }
 
   private def mBeginTr(beginTime: Time = 0.s, parentHandle: Int = 0): Int = {
@@ -96,6 +141,7 @@ abstract class SuvmTransaction(initiator: Option[SuvmComponent] = None) extends 
       this.beginTime = tmpTime
       0
     }
+    doBeginTr()
     events.get("begin").trigger()
     ret
   }
@@ -107,4 +153,31 @@ abstract class SuvmTransaction(initiator: Option[SuvmComponent] = None) extends 
   private var acceptTime: Time = (-1).s
   private var streamHandle: Option[SuvmTrStream] = None
   private var trRecorder: Option[SuvmRecorder] = None
+}
+
+object SuvmTransactionTest extends App {
+  val t = new SuvmTransaction(initiator = Some(new SuvmComponent {
+    override val name: String = "component"
+  }) ) {}
+
+  t.doPrint(Some(new SuvmPrinter {
+    override val name: String = "printer"
+  }))
+
+  val r = new SuvmRecorder {
+    override val name: String = "recorder"
+  }
+
+  t.doRecord(Some(r))
+  println(r.getRecursionPolicy)
+
+//  t.beginTime = 3.s
+//
+//  val c = new SuvmTransaction() {}
+//  c.doCopy(Some(t))
+//  println(c.getInitiator)
+//  println(c.beginTime)
+//  c.doPrint(Some(new SuvmPrinter {
+//    override val name: String = "printer"
+//  }))
 }

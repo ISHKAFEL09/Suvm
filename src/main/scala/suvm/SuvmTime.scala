@@ -23,6 +23,8 @@ object sUnit extends SuvmTimeUnit {
 trait Time {
   val value: Double
   val unit: SuvmTimeUnit
+
+  override def toString: String = s"$value ${unit.name}"
 }
 
 class SuvmTime(x: Double) {

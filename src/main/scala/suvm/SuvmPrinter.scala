@@ -16,6 +16,14 @@ abstract class SuvmPrinter extends SuvmPolicy {
   def printObject(name: String, value: SuvmObject, scopeSeparator: Char = '.'): Unit = ???
 
   def emit: String = ""
+
+  def printTime(name: String, value: Time, scopeSeparator: Char = '.'): Unit = {
+    println(s"$name: ${value.value} ${value.unit.name}")
+  }
+
+  def printGeneric(name: String, typeName: String, size: Int, value: String, scopeSeparator: Char = '.'): Unit = {
+    println(name + value)
+  }
 }
 
 class SuvmTablePrinter(val name: String) extends SuvmPrinter {

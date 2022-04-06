@@ -99,6 +99,13 @@ object SuvmObjectGlobals {
     val UVM_PHASE_JUMPING = Value(512)
   }
 
+  object SuvmRecursionPolicy extends Enumeration {
+    val UVM_DEFAULT_POLICY = Value(0)
+    val UVM_DEEP = Value(1 << 16)
+    val UVM_SHALLOW = Value(1 << 17)
+    val UVM_REFERENCE = Value(1 << 18)
+  }
+
   def suvmReportError(id: String, msg: String, verbosity: SuvmVerbosity.Value = SuvmVerbosity.UVM_NONE,
                       fileName: String = "", line: Int = 0, contextName: String = "",
                       reportEnabledChecked: Boolean = false): Unit = {

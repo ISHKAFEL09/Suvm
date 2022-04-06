@@ -23,4 +23,6 @@ object SuvmImplicits {
       override def id: Int = op.id & x.id
     }
   }
+
+  implicit def Time2BigInt(x: Time): BigInt = BigInt((x.value * x.unit.unit).toInt)
 }

@@ -92,7 +92,7 @@ abstract class SuvmObject extends SuvmVoid {
     mPrinter.emit
   }
 
-  def doPrint(printer: SuvmPrinter): Unit = {}
+  def doPrint(printer: Some[SuvmPrinter]): Unit = {}
 
   def convert2String: String = ""
 
@@ -101,22 +101,22 @@ abstract class SuvmObject extends SuvmVoid {
    */
   def recordObj(recorder: Option[SuvmRecorder] = None): Unit = {}
 
-  def doRecord(recorder: SuvmRecorder): Unit = {}
+  def doRecord(recorder: Some[SuvmRecorder]): Unit = {}
 
   /**
    * copying
    */
-  final def copyObj(rhs: Option[SuvmObject], copier: Option[SuvmCopier] = None): Option[SuvmObject] = rhs flatMap { i =>
+  def copyObj(rhs: Option[SuvmObject], copier: Option[SuvmCopier] = None): Option[SuvmObject] = rhs flatMap { i =>
     val mCopier = copier getOrElse SuvmCoreService.getDefaultCopier
     mCopier.copyObject(this, i)
   }
 
-  def doCopy(rhs: SuvmObject): Unit = {}
+  def doCopy(rhs: Some[SuvmObject]): Unit = {}
 
   /**
    * comparing
    */
-  final def compareObj(rhs: SuvmObject, comparer: Option[SuvmComparer] = None): Boolean = {
+  def compareObj(rhs: SuvmObject, comparer: Option[SuvmComparer] = None): Boolean = {
     val mComparer = comparer getOrElse SuvmComparer.getDefault
     if (!mComparer.getActiveObjectDepth) mComparer.flush()
     mComparer.compareObject(getName, this, rhs)
@@ -150,16 +150,16 @@ abstract class SuvmObject extends SuvmVoid {
     (mPacker.getPackedSize, f(mPacker))
   }
 
-  final def packBits(packer: Option[SuvmPacker] = None): (Int, Seq[Boolean]) =
+  def packBits(packer: Option[SuvmPacker] = None): (Int, Seq[Boolean]) =
     packObj(packer, p => p.getPackedBool)
 
-  final def packBytes(packer: Option[SuvmPacker] = None): (Int, Seq[Byte]) =
+  def packBytes(packer: Option[SuvmPacker] = None): (Int, Seq[Byte]) =
     packObj(packer, p => p.getPackedByte)
 
-  final def packInts(packer: Option[SuvmPacker] = None): (Int, Seq[Int]) =
+  def packInts(packer: Option[SuvmPacker] = None): (Int, Seq[Int]) =
     packObj(packer, p => p.getPackedInt)
 
-  final def packLongs(packer: Option[SuvmPacker] = None): (Int, Seq[Long]) =
+  def packLongs(packer: Option[SuvmPacker] = None): (Int, Seq[Long]) =
     packObj(packer, p => p.getPackedLong)
 
   def doPack(packer: SuvmPacker): Unit = {}
@@ -170,16 +170,16 @@ abstract class SuvmObject extends SuvmVoid {
     (mUnpackPost(mPacker), stream)
   }
 
-  final def unPackBits(s: Seq[Boolean], packer: Option[SuvmPacker] = None): (Int, Seq[Boolean]) =
+  def unPackBits(s: Seq[Boolean], packer: Option[SuvmPacker] = None): (Int, Seq[Boolean]) =
     unPack(s, packer)
 
-  final def unPackBytes(s: Seq[Byte], packer: Option[SuvmPacker] = None): (Int, Seq[Byte]) =
+  def unPackBytes(s: Seq[Byte], packer: Option[SuvmPacker] = None): (Int, Seq[Byte]) =
     unPack(s, packer)
 
-  final def unPackInts(s: Seq[Int], packer: Option[SuvmPacker] = None): (Int, Seq[Int]) =
+  def unPackInts(s: Seq[Int], packer: Option[SuvmPacker] = None): (Int, Seq[Int]) =
     unPack(s, packer)
 
-  final def unPackLongs(s: Seq[Long], packer: Option[SuvmPacker] = None): (Int, Seq[Long]) =
+  def unPackLongs(s: Seq[Long], packer: Option[SuvmPacker] = None): (Int, Seq[Long]) =
     unPack(s, packer)
 
   def doUnpack(packer: SuvmPacker): Unit = {}

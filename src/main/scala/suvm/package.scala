@@ -42,4 +42,6 @@ package object suvm {
   }
 
   val SuvmTop: SuvmRoot = SuvmRoot.getInst
+
+  type SuvmBitstream = BigInt
 }

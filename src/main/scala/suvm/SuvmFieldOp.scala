@@ -7,7 +7,6 @@ import scala.collection.mutable.ArrayBuffer
 
 /**
  * SuvmFieldOp is the SUVM class for describing all operations supported by the doExecuteOp function
- * @param name
  */
 class SuvmFieldOp(val name: String = "") extends SuvmObject {
   private var mIsSet: Boolean = false
@@ -18,9 +17,6 @@ class SuvmFieldOp(val name: String = "") extends SuvmObject {
 
   /**
    * set the operation op_type, policy and rhs values
-   * @param opType
-   * @param policy
-   * @param rhs
    */
   def set(opType: SuvmOpcodeEnum.Value, policy: Option[SuvmPolicy] = None, rhs: Option[SuvmObject] = None): Unit = {
     val matchingOps = ArrayBuffer.empty[String]
@@ -104,16 +100,20 @@ class SuvmFieldOp(val name: String = "") extends SuvmObject {
   }
 }
 
-object SuvmFieldOp {
+object SuvmFieldOp extends SuvmObjectUtils[SuvmFieldOp] {
+  override def create = new SuvmFieldOp(_)
+
   private val mRecycledOp = scala.collection.mutable.Queue.empty[SuvmFieldOp]
 
   def mGetAvailableOp: SuvmFieldOp = {
     if (mRecycledOp.nonEmpty) mRecycledOp.dequeue()
-    else new SuvmFieldOp("FieldOp")
+//    else new SuvmFieldOp("FieldOp")
+    else typeId.create("FieldOp")
   }
 }
 
 object SuvmFieldOpTest extends App {
-  val fop = new SuvmFieldOp("fop")
+  val fop = SuvmFieldOp.typeId.create("fop")
   fop.set(SuvmOpcodeEnum.UVM_PRINT | SuvmOpcodeEnum.UVM_COMPARE)
+  println(fop)
 }
