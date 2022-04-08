@@ -1,7 +1,8 @@
 package suvm
 import java.io.File
 
-abstract class SuvmComponent extends SuvmReportObject {
+abstract class SuvmComponent(val name: String = "",
+                             val parent: Option[SuvmComponent] = None) extends SuvmReportObject {
   def mDoPreAbort(): Unit = ???
 
   def doResolveBindings(): Unit = ???
@@ -9,4 +10,6 @@ abstract class SuvmComponent extends SuvmReportObject {
   def getChildren: Seq[SuvmComponent] = ???
 
   def mSetClMsgArgs(): Unit = ???
+
+  def getParent: Option[SuvmComponent] = parent
 }

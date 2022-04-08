@@ -16,7 +16,7 @@ abstract class SuvmReportObject extends SuvmObject {
     ???
 
   def setReportIdAction(id: String, action: SuvmActionType.Value): Unit =
-    ???
+    println(s"$id: $action")
 
   def suvmReportEnabled(verbosity: SuvmVerbosity.Value,
                         severity: SuvmSeverity.Value,
@@ -25,21 +25,22 @@ abstract class SuvmReportObject extends SuvmObject {
 
   def suvmReportInfo(id: String,
                      msg: String,
-                     verbosity: SuvmVerbosity.Value,
-                     filename: String,
-                     line: Int,
-                     contextName: String,
-                     enabled: Boolean): Unit =
+                     verbosity: SuvmVerbosity.Value = SuvmVerbosity.UVM_MEDIUM,
+                     filename: String = "",
+                     line: Int = 0,
+                     contextName: String = "",
+                     enabled: Boolean = false): Unit =
     ???
 
   def suvmReportWarning(id: String,
-                     msg: String,
-                     verbosity: SuvmVerbosity.Value,
-                     filename: String,
-                     line: Int,
-                     contextName: String,
-                     enabled: Boolean): Unit =
-    ???
+                        msg: String,
+                        verbosity: SuvmVerbosity.Value = SuvmVerbosity.UVM_NONE,
+                        filename: String = "",
+                        line: Int = 0,
+                        contextName: String = "",
+                        enabled: Boolean = false): Unit = {
+    println(s"$id: $msg")
+  }
 
   def suvmInfo(id: String, msg: String, verbosity: SuvmVerbosity.Value): Unit =
     SuvmMessage.suvmInfo(id, msg, verbosity, suvmReportEnabled, suvmReportInfo)

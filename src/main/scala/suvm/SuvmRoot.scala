@@ -8,7 +8,7 @@ import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, Promise}
 
-trait SuvmRoot extends SuvmComponent {
+abstract class SuvmRoot(name: String, parent: Option[SuvmComponent]) extends SuvmComponent(name, parent) {
   var phaseTimeout: Time = SuvmDefaultTimeout
   var finishOnCompletion: Boolean = true
   val mPhaseAllDone: Promise[Unit] = Promise[Unit]
@@ -17,7 +17,7 @@ trait SuvmRoot extends SuvmComponent {
 }
 
 object SuvmRoot {
-  private class SuvmRootImpl(val name: String)(implicit config: SuvmConfig) extends SuvmRoot {
+  private class SuvmRootImpl(name: String)(implicit config: SuvmConfig) extends SuvmRoot(name, None) {
     /** simulation control
      */
     def runTest(testName: String): Unit = {

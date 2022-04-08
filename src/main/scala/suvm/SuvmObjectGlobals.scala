@@ -99,6 +99,10 @@ object SuvmObjectGlobals {
     val UVM_PHASE_JUMPING = Value(512)
   }
 
+  object SuvmPortType extends Enumeration {
+    val UVM_PORT, UVM_EXPORT, UVM_IMPLEMENTATION = Value
+  }
+
   object SuvmRecursionPolicy extends Enumeration {
     val UVM_DEFAULT_POLICY = Value(0)
     val UVM_DEEP = Value(1 << 16)

@@ -65,7 +65,7 @@ abstract class SuvmObject extends SuvmVoid {
     None
   }
 
-  override def toString: String = getClass.getSimpleName
+  override def toString: String = s"SuvmObject($getFullName)"
 
   /**
    * creation
