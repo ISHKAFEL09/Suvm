@@ -9,20 +9,13 @@ import scala.collection.mutable.ArrayBuffer
  * SuvmFieldOp is the SUVM class for describing all operations supported by the doExecuteOp function
  */
 class SuvmFieldOp(val name: String = "") extends SuvmObject {
-  private var mIsSet: Boolean = false
-  private var mUserHook: Boolean = true
-  private var mOpType: SuvmOpcodeEnum.Value = SuvmOpcodeEnum.UVM_DEFAULT
-  private var mPolicy: Option[SuvmPolicy] = None
-  private var mObject: Option[SuvmObject] = None
-
   /**
    * set the operation op_type, policy and rhs values
    */
   def set(opType: SuvmOpcodeEnum.Value, policy: Option[SuvmPolicy] = None, rhs: Option[SuvmObject] = None): Unit = {
     val matchingOps = ArrayBuffer.empty[String]
 
-    def testOps(i: SuvmOpcodeEnum.Value): Unit =
-      if (SuvmOpcodeEnum.hasOp(opType, i)) matchingOps += i.toString
+    def testOps(i: SuvmOpcodeEnum.Value): Unit = if (SuvmOpcodeEnum.hasOp(opType, i)) matchingOps += i.toString
 
     import SuvmOpcodeEnum._
     testOps(UVM_COPY)
@@ -98,6 +91,12 @@ class SuvmFieldOp(val name: String = "") extends SuvmObject {
     flush()
     SuvmFieldOp.mRecycledOp.enqueue(this)
   }
+
+  private var mIsSet: Boolean = false
+  private var mUserHook: Boolean = true
+  private var mOpType: SuvmOpcodeEnum.Value = SuvmOpcodeEnum.UVM_DEFAULT
+  private var mPolicy: Option[SuvmPolicy] = None
+  private var mObject: Option[SuvmObject] = None
 }
 
 object SuvmFieldOp extends SuvmObjectUtils[SuvmFieldOp] {
@@ -107,7 +106,6 @@ object SuvmFieldOp extends SuvmObjectUtils[SuvmFieldOp] {
 
   def mGetAvailableOp: SuvmFieldOp = {
     if (mRecycledOp.nonEmpty) mRecycledOp.dequeue()
-//    else new SuvmFieldOp("FieldOp")
     else typeId.create("FieldOp")
   }
 }
