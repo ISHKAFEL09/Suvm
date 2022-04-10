@@ -15,7 +15,7 @@ class SuvmFieldOp(val name: String = "") extends SuvmObject {
   def set(opType: SuvmOpcodeEnum.Value, policy: Option[SuvmPolicy] = None, rhs: Option[SuvmObject] = None): Unit = {
     val matchingOps = ArrayBuffer.empty[String]
 
-    def testOps(i: SuvmOpcodeEnum.Value): Unit = if (SuvmOpcodeEnum.hasOp(opType, i)) matchingOps += i.toString
+    def testOps(i: SuvmOpcodeEnum.Value): Unit = if (opType.hasOp(i)) matchingOps += i.toString
 
     import SuvmOpcodeEnum._
     testOps(UVM_COPY)

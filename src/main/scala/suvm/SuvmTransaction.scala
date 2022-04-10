@@ -77,45 +77,37 @@ abstract class SuvmTransaction(val name: String = "", initiator: Option[SuvmComp
   /**
    * Internal methods properties; do not use directly
    */
-  override def doPrint(printer: Some[SuvmPrinter]): Unit = {
-    if (printer.nonEmpty) {
-      val p = printer.get
-      if (acceptTime.value == -1) p.printTime("accept_time", acceptTime)
-      if (beginTime.value == -1) p.printTime("begin_time", beginTime)
-      if (endTime.value == -1) p.printTime("end_time", endTime)
-      if (_initiator.nonEmpty) {
-        val str = s"@${_initiator.get.getInstId}"
-        p.printGeneric("initiator", _initiator.get.getTypeName, -1, str)
-      }
+  override def doPrint(printer: SuvmPrinter): Unit = {
+    if (acceptTime.value == -1) printer.printTime("accept_time", acceptTime)
+    if (beginTime.value == -1) printer.printTime("begin_time", beginTime)
+    if (endTime.value == -1) printer.printTime("end_time", endTime)
+    if (_initiator.nonEmpty) {
+      val str = s"@${_initiator.get.getInstId}"
+      printer.printGeneric("initiator", _initiator.get.getTypeName, -1, str)
     }
   }
 
-  override def doRecord(recorder: Some[SuvmRecorder]): Unit = {
-    if (recorder.nonEmpty) {
-      val r = recorder.get
-      if (acceptTime.value != -1)
-        r.recordField("accept_time", acceptTime, acceptTime.bitLength, SuvmRadixEnum.UVM_TIME)
-      if (_initiator.nonEmpty) {
-        val p = r.getRecursionPolicy
-        r.setRecursionPolicy(SuvmRecursionPolicy.UVM_REFERENCE)
-        r.recordObject("initiator", _initiator.get)
-        r.setRecursionPolicy(p)
-      }
+  override def doRecord(recorder: SuvmRecorder): Unit = {
+    if (acceptTime.value != -1)
+      recorder.recordField("accept_time", acceptTime, acceptTime.bitLength, SuvmRadixEnum.UVM_TIME)
+    if (_initiator.nonEmpty) {
+      val p = recorder.getRecursionPolicy
+      recorder.setRecursionPolicy(SuvmRecursionPolicy.UVM_REFERENCE)
+      recorder.recordObject("initiator", _initiator.get)
+      recorder.setRecursionPolicy(p)
     }
   }
 
-  override def doCopy(rhs: Some[SuvmObject]): Unit = {
-    if (rhs.nonEmpty) {
-      rhs.get match {
-        case t: SuvmTransaction =>
-          acceptTime = t.acceptTime
-          beginTime = t.beginTime
-          endTime = t.endTime
-          _initiator = t._initiator
-          streamHandle = t.streamHandle
-          trRecorder = t.trRecorder
-        case _ =>
-      }
+  override def doCopy(rhs: SuvmObject): Unit = {
+    rhs match {
+      case t: SuvmTransaction =>
+        acceptTime = t.acceptTime
+        beginTime = t.beginTime
+        endTime = t.endTime
+        _initiator = t._initiator
+        streamHandle = t.streamHandle
+        trRecorder = t.trRecorder
+      case _ =>
     }
   }
 
@@ -160,15 +152,15 @@ object SuvmTransactionTest extends App {
     override val name: String = "component"
   }) ) {}
 
-  t.doPrint(Some(new SuvmPrinter {
+  t.doPrint(new SuvmPrinter {
     override val name: String = "printer"
-  }))
+  })
 
   val r = new SuvmRecorder {
     override val name: String = "recorder"
   }
 
-  t.doRecord(Some(r))
+  t.doRecord(r)
   println(r.getRecursionPolicy)
 
 //  t.beginTime = 3.s

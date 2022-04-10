@@ -92,7 +92,7 @@ abstract class SuvmObject extends SuvmVoid {
     mPrinter.emit
   }
 
-  def doPrint(printer: Some[SuvmPrinter]): Unit = {}
+  def doPrint(printer: SuvmPrinter): Unit = {}
 
   def convert2String: String = ""
 
@@ -101,7 +101,7 @@ abstract class SuvmObject extends SuvmVoid {
    */
   def recordObj(recorder: Option[SuvmRecorder] = None): Unit = {}
 
-  def doRecord(recorder: Some[SuvmRecorder]): Unit = {}
+  def doRecord(recorder: SuvmRecorder): Unit = {}
 
   /**
    * copying
@@ -111,7 +111,7 @@ abstract class SuvmObject extends SuvmVoid {
     mCopier.copyObject(this, i)
   }
 
-  def doCopy(rhs: Some[SuvmObject]): Unit = {}
+  def doCopy(rhs: SuvmObject): Unit = {}
 
   /**
    * comparing

@@ -39,8 +39,6 @@ object SuvmObjectGlobals {
     val UVM_FLAGS_OFF = Value(0)
     val UVM_ALL_ON = UVM_FLAGS_ON
     val UVM_DEFAULT = UVM_ALL_ON
-
-    def hasOp(op: Value, i: Value): Boolean = (op.id & i.id) != 0
   }
 
   object SuvmVerbosity extends Enumeration {

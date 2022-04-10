@@ -25,6 +25,8 @@ abstract class SuvmRecorder extends SuvmPolicy {
     println(s"$name: $value")
   }
 
+  def recordString(name: String, value: String): Unit = {}
+
   private var policy: SuvmRecursionPolicy.Value = SuvmRecursionPolicy.UVM_DEFAULT_POLICY
 }
 
