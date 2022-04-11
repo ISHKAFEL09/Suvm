@@ -14,6 +14,11 @@ abstract class SuvmPrinter extends SuvmPolicy {
 
   def getRootEnabled: Boolean = knobs.showRoot
 
+  def printArrayHeader(name: String, size: Int, arrayType: String = "array", scopeSeparator: Char = '.'): Unit =
+    println(s"$name: $size")
+
+  def printArrayFooter(size: Int = 0): Unit = println("footer")
+
   def printObject(name: String, value: SuvmObject, scopeSeparator: Char = '.'): Unit =
     println(s"$name: $value")
 
@@ -32,9 +37,9 @@ abstract class SuvmPrinter extends SuvmPolicy {
   }
 
   def printField(name: String, value: SuvmBitstream, size: Int,
-                 radix: SuvmRadixEnum.Value = SuvmRadixEnum.UVM_NORADIX,
+                 radix: SuvmRadix.Value = SuvmRadix.UVM_NORADIX,
                  scopeSeparator: Char = '.', typeName: String = ""): Unit = {
-
+    println(f"$name: $value%x")
   }
 }
 

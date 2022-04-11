@@ -9,7 +9,7 @@ trait SuvmCmdlineProcessor extends SuvmReportObject {
 }
 
 object SuvmCmdlineProcessor {
-  private class SuvmCmdlineProcessorImpl(val name: String) extends SuvmCmdlineProcessor {
+  private class SuvmCmdlineProcessorImpl(name: String) extends SuvmCmdlineProcessor {
     private var _args = ArrayBuffer.empty[String]
     private var _suvmArgs = ArrayBuffer.empty[String]
     private var _plusArgs = ArrayBuffer.empty[String]

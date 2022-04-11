@@ -1,7 +1,7 @@
 package suvm
 
 import SuvmObjectGlobals._
-
+import SuvmImplicits._
 import scala.collection.mutable
 
 abstract class SuvmPortComponentBase(name: String,
@@ -183,7 +183,7 @@ abstract class SuvmPortBase[T <: IF](name: String,
   private val mMinSize: Int = minSize
   private val mMaxSize: Int = maxSize
   val (x, _) = SuvmConfigDbInt.get(this, "", "checkConnectionRelationships", 0)
-  if (!x) setReportIdAction(sConnectionWarningId, SuvmActionType.UVM_NO_ACTION)
+  if (!x) setReportIdAction(sConnectionWarningId, SuvmAction.UVM_NO_ACTION)
 }
 
 object SuvmPortBaseTest extends App {

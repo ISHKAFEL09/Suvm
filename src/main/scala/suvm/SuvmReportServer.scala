@@ -10,6 +10,7 @@ import scala.collection.mutable
 abstract class SuvmReportServer extends SuvmObject {
   def reportSummarize(f: File = new File(UVM_STDOUT)): Unit
   def getSeverityCount(severity: SuvmSeverity.Value): Int
+  def processReportMessage(reportMessage: SuvmReportMessage): Unit
 }
 
 class SuvmDefaultReportServer(val name: String = "SuvmReportServer") extends SuvmReportServer {
@@ -44,7 +45,7 @@ class SuvmDefaultReportServer(val name: String = "SuvmReportServer") extends Suv
     else {
       val root = SuvmRoot.getInst
       val action = root.getReportAction(UVM_INFO, "UVM/REPORT/SERVER")
-      root.setReportIdAction("UVM/REPORT/SERVER", SuvmActionType.UVM_LOG)
+      root.setReportIdAction("UVM/REPORT/SERVER", SuvmAction.UVM_LOG)
       root.setReportIdFile("UVM/REPORT/SERVER", f)
       suvmInfo("UVM/REPORT/SERVER", "UVM_STRING_QUEUE_STREAMING_PACK", UVM_NONE) // TODO:
       root.setReportIdAction("UVM/REPORT/SERVER", action)
@@ -52,6 +53,10 @@ class SuvmDefaultReportServer(val name: String = "SuvmReportServer") extends Suv
   }
 
   def getSeverityCount(severity: SuvmSeverity.Value): Int = mSeverityCount(severity)
+
+  def processReportMessage(reportMessage: SuvmReportMessage): Unit = reportMessage.doPrint(new SuvmPrinter {
+    override val name: String = "printer"
+  })
 }
 
 object SuvmReportServer {

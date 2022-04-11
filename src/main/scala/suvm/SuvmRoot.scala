@@ -2,6 +2,7 @@ package suvm
 
 import SuvmObjectGlobals._
 import SuvmObjectGlobals.SuvmCoreState._
+import SuvmImplicits._
 
 import java.io.File
 import scala.collection.mutable.ArrayBuffer

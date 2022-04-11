@@ -2,6 +2,7 @@ package suvm
 
 import suvm.SuvmObjectGlobals._
 
+import java.io.File
 import scala.annotation.tailrec
 import scala.language.implicitConversions
 
@@ -16,6 +17,13 @@ object SuvmImplicits {
   implicit def Time2BigInt(x: Time): BigInt = BigInt((x.value * x.unit.unit).toInt)
 
   implicit def Int2BigInt(x: Int): BigInt = BigInt(x)
+
+  implicit def Enum2Int(x: Enumeration#Value): Int = x.id
+
+  implicit def File2BitStream(x: Option[File]): SuvmBitstream = x match {
+    case Some(value) => value.hashCode()
+    case None => 0
+  }
 
   /**
    * type class
@@ -34,8 +42,8 @@ object SuvmImplicits {
     }
   }
 
-  implicit class SuvmActionOps(val op: SuvmActionType.Value) extends FieldOps[SuvmActionType.Value] {
-    override def create(i: Int): SuvmActionType.Value = new SuvmActionType.Value {
+  implicit class SuvmActionOps(val op: SuvmAction.Value) extends FieldOps[SuvmAction.Value] {
+    override def create(i: Int): SuvmAction.Value = new SuvmAction.Value {
       override def id: Int = i
     }
   }

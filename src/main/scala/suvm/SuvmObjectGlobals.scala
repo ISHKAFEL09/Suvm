@@ -1,7 +1,9 @@
 package suvm
 
+import SuvmImplicits._
+
 object SuvmObjectGlobals {
-  object SuvmRadixEnum extends Enumeration {
+  object SuvmRadix extends Enumeration {
     val UVM_BIN = Value
     val UVM_DEC = Value
     val UVM_UNSIGNED = Value
@@ -48,17 +50,18 @@ object SuvmObjectGlobals {
     val UVM_HIGH = Value(300)
     val UVM_FULL = Value(400)
     val UVM_DEBUG = Value(500)
+    def find(id: Int): Option[Value] = values.find(_.id == id)
   }
 
-  object SuvmActionType extends Enumeration {
+  object SuvmAction extends Enumeration {
     val UVM_NO_ACTION = Value(0x0)
     val UVM_DISPLAY   = Value(0x1)
     val UVM_LOG       = Value(0x2)
     val UVM_COUNT     = Value(0x4)
     val UVM_EXIT      = Value(0x8)
     val UVM_CALL_HOOK = Value(0x10)
-    val UVM_STOP      = Value(0x12)
-    val UVM_RM_RECORD = Value(0x14)
+    val UVM_STOP      = Value(0x20)
+    val UVM_RM_RECORD = Value(0x40)
   }
 
   object SuvmCoreState extends Enumeration {
@@ -108,19 +111,19 @@ object SuvmObjectGlobals {
     val UVM_REFERENCE = Value(1 << 18)
   }
 
-  def suvmReportError(id: String, msg: String, verbosity: SuvmVerbosity.Value = SuvmVerbosity.UVM_NONE,
+  def suvmReportError(id: String, msg: String, verbosity: Int = SuvmVerbosity.UVM_NONE,
                       fileName: String = "", line: Int = 0, contextName: String = "",
                       reportEnabledChecked: Boolean = false): Unit = {
     println(s"[$id] $msg")
   }
 
-  def suvmReportEnabled(verbosity: SuvmVerbosity.Value,
+  def suvmReportEnabled(verbosity: Int,
                         severity: SuvmSeverity.Value,
                         id: String): Boolean = true
 
   def suvmReportInfo(id: String,
                      msg: String,
-                     verbosity: SuvmVerbosity.Value,
+                     verbosity: Int,
                      filename: String,
                      line: Int,
                      contextName: String,
@@ -136,7 +139,7 @@ object SuvmObjectGlobals {
 
   def suvmReportWarning(id: String,
                         msg: String,
-                        verbosity: SuvmVerbosity.Value,
+                        verbosity: Int,
                         filename: String,
                         line: Int,
                         contextName: String,

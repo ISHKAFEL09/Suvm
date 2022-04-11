@@ -2,6 +2,7 @@ package suvm
 
 import scala.util.Random
 import SuvmObjectGlobals._
+import SuvmImplicits._
 
 /**
  * base class for all Suvm classes

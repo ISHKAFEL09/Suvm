@@ -9,24 +9,24 @@ import java.io.File
  * Base class for report message element. Defines common interface.
  */
 sealed abstract class SuvmReportMessageElementBase {
-  var _action: SuvmActionType.Value = _
+  var _action: SuvmAction.Value = _
   var _name: String = _
 
   def getName: String = _name
 
   def setName(name: String): Unit = _name = name
 
-  def getAction: SuvmActionType.Value = _action
+  def getAction: SuvmAction.Value = _action
 
-  def setAction(action: SuvmActionType.Value): Unit = _action = action
+  def setAction(action: SuvmAction.Value): Unit = _action = action
 
   def rPrint(printer: SuvmPrinter): Unit = {
-    if (_action.hasOp(SuvmActionType.UVM_LOG | SuvmActionType.UVM_DISPLAY))
+    if (_action.hasOp(SuvmAction.UVM_LOG | SuvmAction.UVM_DISPLAY))
       doPrint(printer)
   }
 
   def rRecord(recorder: SuvmRecorder): Unit = {
-    if (_action.hasOp(SuvmActionType.UVM_RM_RECORD))
+    if (_action.hasOp(SuvmAction.UVM_RM_RECORD))
       doRecord(recorder)
   }
 
@@ -67,9 +67,9 @@ class SuvmReportMessageIntElement extends SuvmReportMessageElementBase {
     tmp
   }
 
-  def getValue: (Int, SuvmRadixEnum.Value, SuvmBitstream) = (_size, _radix, _val)
+  def getValue: (Int, SuvmRadix.Value, SuvmBitstream) = (_size, _radix, _val)
 
-  def setValue(value: SuvmBitstream, size: Int, radix: SuvmRadixEnum.Value): Unit = {
+  def setValue(value: SuvmBitstream, size: Int, radix: SuvmRadix.Value): Unit = {
     _size = size
     _radix = radix
     _val = value
@@ -77,7 +77,7 @@ class SuvmReportMessageIntElement extends SuvmReportMessageElementBase {
 
   private var _val: SuvmBitstream = _
   private var _size: Int = _
-  private var _radix: SuvmRadixEnum.Value = _
+  private var _radix: SuvmRadix.Value = _
 }
 
 /**
@@ -143,7 +143,7 @@ class SuvmReportMessageStringElement extends SuvmReportMessageElementBase {
  * with APIs to add and delete the elements.
  */
 class SuvmReportMessageElementContainer(val name: String = "ElementContainer") extends SuvmObject {
-  import SuvmActionType._
+  import SuvmAction._
 
   override def doPrint(printer: SuvmPrinter): Unit = elements foreach(_.rPrint(printer))
 
@@ -170,8 +170,8 @@ class SuvmReportMessageElementContainer(val name: String = "ElementContainer") e
    *  record the field. The optional print/record bit is to specify whether
    *  the element will be printed/recorded.
    */
-  def addInt(name: String, value: SuvmBitstream, size: Int, radix: SuvmRadixEnum.Value,
-             action: SuvmActionType.Value = UVM_LOG | UVM_RM_RECORD): Unit = {
+  def addInt(name: String, value: SuvmBitstream, size: Int, radix: SuvmRadix.Value,
+             action: SuvmAction.Value = UVM_LOG | UVM_RM_RECORD): Unit = {
     val element = new SuvmReportMessageIntElement
     element.setName(name)
     element.setValue(value, size, radix)
@@ -184,7 +184,7 @@ class SuvmReportMessageElementContainer(val name: String = "ElementContainer") e
    *   message. The optional print/record bit is to specify whether
    *   the element will be printed/recorded.
     */
-  def addString(name: String, value: String, action: SuvmActionType.Value = UVM_LOG | UVM_RM_RECORD): Unit = {
+  def addString(name: String, value: String, action: SuvmAction.Value = UVM_LOG | UVM_RM_RECORD): Unit = {
     val element = new SuvmReportMessageStringElement
     element.setName(name)
     element.setValue(value)
@@ -197,7 +197,7 @@ class SuvmReportMessageElementContainer(val name: String = "ElementContainer") e
    * the message. The optional print/record bit is to specify whether
    * the element will be printed/recorded.
    */
-  def addObject(name: String, obj: SuvmObject, action: SuvmActionType.Value = UVM_LOG | UVM_RM_RECORD): Unit = {
+  def addObject(name: String, obj: SuvmObject, action: SuvmAction.Value = UVM_LOG | UVM_RM_RECORD): Unit = {
     val element = new SuvmReportMessageObjectElement
     element.setName(name)
     element.setValue(obj)
@@ -226,9 +226,9 @@ class SuvmReportMessage(val name: String = "SuvmReportMessage") extends SuvmObje
         printer.printGeneric("verbosity", "SuvmVerbosity", value.id.bitLength, value.toString)
       case None =>
     }
-    printer.printField("verbosity", _verbosity, _verbosity.bitLength, SuvmRadixEnum.UVM_HEX)
+    printer.printField("verbosity", _verbosity, _verbosity.bitLength, SuvmRadix.UVM_HEX)
     printer.printString("filename", _filename)
-    printer.printField("line", _line, _line.bitLength, SuvmRadixEnum.UVM_UNSIGNED)
+    printer.printField("line", _line, _line.bitLength, SuvmRadix.UVM_UNSIGNED)
     printer.printString("contextName", _contextName)
     _reportMessageElementContainer.getElements.foreach(_.rPrint(printer))
   }
@@ -283,9 +283,9 @@ class SuvmReportMessage(val name: String = "SuvmReportMessage") extends SuvmObje
 
   def setAction(act: Int): Unit = _action = act
 
-  def getFile: File = _file
+  def getFile: Option[File] = _file
 
-  def setFile(fl: File): Unit = _file = fl
+  def setFile(fl: Option[File]): Unit = _file = fl
 
   def setReportMessage(severity: SuvmSeverity.Value, id: String, message: String,
                        verbosity: Int, filename: String, line: Int, contextName: String): Unit = {
@@ -300,15 +300,15 @@ class SuvmReportMessage(val name: String = "SuvmReportMessage") extends SuvmObje
 
   def getElementContainer: SuvmReportMessageElementContainer = _reportMessageElementContainer
 
-  import SuvmActionType._
-  def addInt(name: String, value: SuvmBitstream, size: Int, radix: SuvmRadixEnum.Value,
-             action: SuvmActionType.Value = UVM_LOG | UVM_RM_RECORD): Unit =
+  import SuvmAction._
+  def addInt(name: String, value: SuvmBitstream, size: Int, radix: SuvmRadix.Value,
+             action: SuvmAction.Value = UVM_LOG | UVM_RM_RECORD): Unit =
     _reportMessageElementContainer.addInt(name, value, size, radix, action)
 
-  def addString(name: String, value: String, action: SuvmActionType.Value = UVM_LOG | UVM_RM_RECORD): Unit =
+  def addString(name: String, value: String, action: SuvmAction.Value = UVM_LOG | UVM_RM_RECORD): Unit =
     _reportMessageElementContainer.addString(name, value, action)
 
-  def addObject(name: String, obj: SuvmObject, action: SuvmActionType.Value = UVM_LOG | UVM_RM_RECORD): Unit =
+  def addObject(name: String, obj: SuvmObject, action: SuvmAction.Value = UVM_LOG | UVM_RM_RECORD): Unit =
     _reportMessageElementContainer.addObject(name, obj, action)
 
   private var _reportObject: SuvmReportObject = _
@@ -322,7 +322,7 @@ class SuvmReportMessage(val name: String = "SuvmReportMessage") extends SuvmObje
   private var _line: Int = _
   private var _contextName: String = _
   private var _action: Int = _
-  private var _file: File = _
+  private var _file: Option[File] = _
   private val _reportMessageElementContainer = new SuvmReportMessageElementContainer()
 }
 
@@ -341,7 +341,7 @@ object SuvmReportMessageTest extends App {
   val r = SuvmReportMessage.typeId.create("reportMessage")
   r.setReportMessage(SuvmSeverity.UVM_INFO, "r", "reportTest",
     SuvmVerbosity.UVM_NONE.id, "report", 0, "context")
-  r.addInt("foo", 3, 32, SuvmRadixEnum.UVM_HEX)
+  r.addInt("foo", 3, 32, SuvmRadix.UVM_HEX)
   r.addString("bar", "hi there")
   r.addObject("myObj", new SuvmFieldOp())
   r.doPrint(printer)

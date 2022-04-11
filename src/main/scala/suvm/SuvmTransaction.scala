@@ -89,7 +89,7 @@ abstract class SuvmTransaction(val name: String = "", initiator: Option[SuvmComp
 
   override def doRecord(recorder: SuvmRecorder): Unit = {
     if (acceptTime.value != -1)
-      recorder.recordField("accept_time", acceptTime, acceptTime.bitLength, SuvmRadixEnum.UVM_TIME)
+      recorder.recordField("accept_time", acceptTime, acceptTime.bitLength, SuvmRadix.UVM_TIME)
     if (_initiator.nonEmpty) {
       val p = recorder.getRecursionPolicy
       recorder.setRecursionPolicy(SuvmRecursionPolicy.UVM_REFERENCE)

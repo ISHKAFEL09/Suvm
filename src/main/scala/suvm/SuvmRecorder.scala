@@ -14,7 +14,7 @@ abstract class SuvmRecorder extends SuvmPolicy {
   def recordField(name: String,
                   value: SuvmBitstream,
                   size: Int,
-                  radix: SuvmRadixEnum.Value = SuvmRadixEnum.UVM_NORADIX): Unit =
+                  radix: SuvmRadix.Value = SuvmRadix.UVM_NORADIX): Unit =
     println(s"$name: $value")
 
   def setRecursionPolicy(p: SuvmRecursionPolicy.Value): Unit = policy = p

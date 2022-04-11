@@ -1,7 +1,7 @@
 package suvm
 import java.io.File
 
-abstract class SuvmComponent(val name: String = "",
+abstract class SuvmComponent(name: String = "",
                              val parent: Option[SuvmComponent] = None) extends SuvmReportObject {
   def mDoPreAbort(): Unit = ???
 
