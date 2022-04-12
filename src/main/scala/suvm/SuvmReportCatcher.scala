@@ -7,5 +7,7 @@ abstract class SuvmReportCatcher(name: String) extends SuvmCallback(name) {
 }
 
 object SuvmReportCatcher {
-  def summarize(file: File): Unit = ???
+  def summarize(file: Option[File]): Unit = ???
+
+  def processAllReportCatchers(reportMessage: SuvmReportMessage): Boolean = true
 }

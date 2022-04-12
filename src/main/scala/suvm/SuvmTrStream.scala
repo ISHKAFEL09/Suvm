@@ -1,7 +1,9 @@
 package suvm
 
-abstract class SuvmTrStream extends SuvmObject {
-  def getDb: SuvmTrDatabase
+import SuvmImplicits._
 
-  def openRecorder(name: String, openTime: Time, typeName: String): Option[SuvmRecorder]
+class SuvmTrStream(val name: String) extends SuvmObject {
+  def getDb: SuvmTrDatabase = ???
+
+  def openRecorder(name: String, openTime: Time = 0.s, typeName: String = ""): Option[SuvmRecorder] = ???
 }

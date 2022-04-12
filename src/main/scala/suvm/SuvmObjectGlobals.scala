@@ -123,11 +123,13 @@ object SuvmObjectGlobals {
 
   def suvmReportInfo(id: String,
                      msg: String,
-                     verbosity: Int,
-                     filename: String,
-                     line: Int,
-                     contextName: String,
-                     enabled: Boolean): Unit = ???
+                     verbosity: Int = SuvmVerbosity.UVM_MEDIUM,
+                     filename: String = "",
+                     line: Int = 0,
+                     contextName: String = "",
+                     enabled: Boolean = false): Unit = {
+    println(s"$id: $msg")
+  }
 
   def suvmReportFatal(id: String,
                      msg: String,

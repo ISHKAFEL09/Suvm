@@ -25,6 +25,8 @@ object SuvmImplicits {
     case None => 0
   }
 
+  implicit def Bool2Int(x: Boolean): Int = if (x) 1 else 0
+
   /**
    * type class
    */

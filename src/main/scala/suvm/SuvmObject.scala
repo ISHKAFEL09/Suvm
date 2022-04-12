@@ -100,7 +100,8 @@ abstract class SuvmObject extends SuvmVoid {
   /**
    * recording
    */
-  def recordObj(recorder: Option[SuvmRecorder] = None): Unit = {}
+  def recordObj(recorder: Option[SuvmRecorder] = None): Unit =
+    if (recorder.nonEmpty) recorder.get.recordObject(getName, this)
 
   def doRecord(recorder: SuvmRecorder): Unit = {}
 

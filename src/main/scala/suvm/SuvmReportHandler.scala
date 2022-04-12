@@ -404,6 +404,9 @@ object SuvmReportHandler extends SuvmObjectUtils[SuvmReportHandler] {
 }
 
 object SuvmReportHandlerTest extends App {
+  implicit val config: SuvmConfig = SuvmConfig(true)
+  SuvmRoot.init
+
   val r = SuvmReportHandler.typeId.create("r")
   val printer = new SuvmPrinter {
     override val name: String = "printer"
@@ -413,6 +416,7 @@ object SuvmReportHandlerTest extends App {
   r.setSeverityIdOverride(SuvmSeverity.UVM_INFO, "ID4", SuvmSeverity.UVM_FATAL)
   r.setSeverityIdVerbosity(SuvmSeverity.UVM_INFO, "ID3", 501)
   r.setIdAction("ACT_ID", SuvmAction.UVM_LOG | SuvmAction.UVM_DISPLAY)
+  r.setSeverityAction(SuvmSeverity.UVM_INFO, SuvmAction.UVM_LOG | SuvmAction.UVM_DISPLAY)
   r.setDefaultFile(Some(new File("defaultFile")))
   r.doPrint(printer)
 

@@ -311,6 +311,29 @@ class SuvmReportMessage(val name: String = "SuvmReportMessage") extends SuvmObje
   def addObject(name: String, obj: SuvmObject, action: SuvmAction.Value = UVM_LOG | UVM_RM_RECORD): Unit =
     _reportMessageElementContainer.addObject(name, obj, action)
 
+  /**
+   * not documented
+   */
+  override def doRecord(recorder: SuvmRecorder): Unit = {
+    mRecordCoreProperties(recorder)
+    _reportMessageElementContainer.recordObj(Some(recorder))
+  }
+
+  private def mRecordMessage(recorder: SuvmRecorder): Unit = recorder.recordString("Message", _message)
+
+  private def mRecordCoreProperties(recorder: SuvmRecorder): Unit = {
+    if (_contextName.nonEmpty) recorder.recordString("ContextName", _contextName)
+    recorder.recordString("Filename", _filename)
+    recorder.recordField("Line", _line, _line.bitLength, SuvmRadix.UVM_UNSIGNED)
+    recorder.recordString("Severity", _severity.toString)
+    SuvmVerbosity.find(_verbosity) match {
+      case Some(value) => recorder.recordString("Verbosity", value.toString)
+      case None => recorder.recordString("Verbosity", _verbosity.toString)
+    }
+    recorder.recordString("Id", _id)
+    mRecordMessage(recorder)
+  }
+
   private var _reportObject: SuvmReportObject = _
   private var _reportHandle: SuvmReportHandler = _
   private var _reportServer: SuvmReportServer = _

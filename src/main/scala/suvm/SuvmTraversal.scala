@@ -57,7 +57,7 @@ class SuvmComponentNameCheckVisitor(val name: String) extends SuvmVisitor[SuvmCo
     ".+"
 
   override def visit(node: SuvmComponent): Unit =
-    if (node != SuvmRoot.getInst) {
+    if (node != SuvmRoot.get) {
       if (!suvmIsMatch(getNameConstraint, node.getName))
         suvmWarning("UVM/COMP/NAME", "violates constraints")
     }

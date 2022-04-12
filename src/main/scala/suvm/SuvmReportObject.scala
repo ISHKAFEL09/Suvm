@@ -84,13 +84,12 @@ class SuvmReportObject(val name: String = "") extends SuvmObject {
     mReportHandleInit()
   }
 
-  def setReportHandler(handler: SuvmReportHandler): Unit =
-    ???
+  def setReportHandler(handler: SuvmReportHandler): Unit = mReportHandle = handler
 
   def getReportAction(severity: SuvmSeverity.Value, id: String): SuvmAction.Value =
     ???
 
-  def setReportIdFile(id: String, file: File): Unit =
+  def setReportIdFile(id: String, file: Option[File]): Unit =
     ???
 
   def setReportIdAction(id: String, action: SuvmAction.Value): Unit =

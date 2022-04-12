@@ -41,6 +41,12 @@ abstract class SuvmPrinter extends SuvmPolicy {
                  scopeSeparator: Char = '.', typeName: String = ""): Unit = {
     println(f"$name: $value%x")
   }
+
+  def getLinePrefix: String = prefix
+
+  def setLinePrefix(p: String): Unit = prefix = p
+
+  private var prefix: String = ""
 }
 
 class SuvmTablePrinter(val name: String) extends SuvmPrinter {

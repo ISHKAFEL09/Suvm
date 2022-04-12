@@ -9,7 +9,7 @@ abstract class SuvmComponent(name: String = "",
 
   def getChildren: Seq[SuvmComponent] = ???
 
-  def mSetClMsgArgs(): Unit = ???
+  def mSetClMsgArgs(): Unit = {}
 
   def getParent: Option[SuvmComponent] = parent
 }

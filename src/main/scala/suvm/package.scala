@@ -41,7 +41,7 @@ package object suvm {
     SuvmRoot.init.runTest(testName)
   }
 
-  val SuvmTop: SuvmRoot = SuvmRoot.getInst
+  lazy val SuvmTop: SuvmRoot = SuvmRoot.get
 
   type SuvmBitstream = BigInt
 }

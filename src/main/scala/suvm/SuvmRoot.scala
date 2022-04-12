@@ -15,6 +15,7 @@ abstract class SuvmRoot(name: String, parent: Option[SuvmComponent]) extends Suv
   val mPhaseAllDone: Promise[Unit] = Promise[Unit]
   override def getTypeName: String = "SuvmRoot"
   def runTest(testName: String): Unit
+  def die(): Unit
 }
 
 object SuvmRoot {
@@ -131,5 +132,5 @@ object SuvmRoot {
       r
   }
 
-  def get(): Unit = getInst
+  def get: SuvmRoot = getInst
 }

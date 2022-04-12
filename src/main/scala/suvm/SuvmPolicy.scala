@@ -1,9 +1,7 @@
 package suvm
 
 abstract class SuvmPolicy extends SuvmObject {
-  def getActiveObjectDepth: Boolean =
-    ???
+  def getActiveObjectDepth: Boolean = false
 
-  def flush(): Unit =
-    ???
+  def flush(): Unit = {}
 }
