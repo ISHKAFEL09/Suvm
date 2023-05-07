@@ -49,7 +49,8 @@ class SuvmReportObject(val name: String = "") extends SuvmObject {
   def suvmReportWarning(id: String, message: String, verbosity: Int = SuvmVerbosity.UVM_NONE,
                         filename: String = "", line: Int = 0, contextName: String = "",
                         reportEnabledChecked: Boolean = false): Unit =
-    suvmReport(SuvmSeverity.UVM_WARNING, id, message, verbosity, filename, line, contextName, reportEnabledChecked)
+    suvmReport(SuvmSeverity.UVM_WARNING, id, message, verbosity, filename, line, contextName,
+      reportEnabledChecked)
 
   def suvmReportError(id: String, message: String, verbosity: Int = SuvmVerbosity.UVM_NONE,
                       filename: String = "", line: Int = 0, contextName: String = "",

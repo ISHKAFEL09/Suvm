@@ -1,8 +1,11 @@
 package suvm
 
+import SuvmObjectGlobals._
+import SuvmImplicits._
 import java.io.File
 
-abstract class SuvmReportCatcher(name: String) extends SuvmCallback(name) {
+// TODO: how to realize callback facility?
+class SuvmReportCatcher(name: String) extends SuvmCallback(name) {
 
 }
 

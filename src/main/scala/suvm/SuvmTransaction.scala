@@ -16,7 +16,7 @@ abstract class SuvmTransaction(val name: String = "", initiator: Option[SuvmComp
   def acceptTr(acceptTime: Time = 0.s): Unit = {
     this.acceptTime = if (acceptTime.value != 0) acceptTime else realtime
     doAcceptTr()
-    events.get("accept").trigger() // TODO:
+    events.get("accept").trigger()
   }
 
   def doAcceptTr(): Unit = {}

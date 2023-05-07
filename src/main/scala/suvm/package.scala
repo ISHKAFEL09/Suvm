@@ -44,4 +44,6 @@ package object suvm {
   lazy val SuvmTop: SuvmRoot = SuvmRoot.get
 
   type SuvmBitstream = BigInt
+
+  type SuvmQueue[T] = collection.mutable.Queue[T]
 }
