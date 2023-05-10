@@ -7,7 +7,7 @@ import scala.collection._
 import scala.collection.mutable.{ArrayBuffer, ListBuffer}
 
 private[chiseltester] class TesterThreadList(elements: Seq[AbstractTesterThread]) {
-  def toSeq(): Seq[AbstractTesterThread] = elements
+  def toSeq: Seq[AbstractTesterThread] = elements
 
   def join(): Unit = {
     elements foreach { e =>
@@ -16,12 +16,20 @@ private[chiseltester] class TesterThreadList(elements: Seq[AbstractTesterThread]
   }
 
   def ++(others: TesterThreadList): TesterThreadList = {
-    new TesterThreadList(elements ++ others.toSeq())
+    new TesterThreadList(elements ++ others.toSeq)
   }
 
   def fork(runnable: => Unit): TesterThreadList = {
     new TesterThreadList(elements :+ Context().backend.doFork(() => runnable))
   }
+
+  def kill(): Unit = {
+    elements foreach { e =>
+      e.thread.interrupt()
+    }
+  }
+
+  def done: Boolean = elements.forall(!_.thread.isAlive)
 }
 
 private[chiseltester] trait ThreadedBackend {
@@ -37,19 +45,17 @@ private[chiseltester] trait ThreadedBackend {
     val waiting: Semaphore = new Semaphore(0)
     var done: Boolean = false
 
-    val thread: Thread = new Thread(new Runnable {
-      override def run(): Unit = {
-        try {
-          waiting.acquire()
-          runnable()
-          done = true
-          threadFinished(id)
-        } catch {
-          case _: InterruptedException =>
-          case e@(_: Exception | _: Error) => onException(e)
-        } finally {
-          scheduler()
-        }
+    val thread: Thread = new Thread(() => {
+      try {
+        waiting.acquire()
+        runnable()
+      } catch {
+        case _: InterruptedException =>
+        case e@(_: Exception | _: Error) => onException(e)
+      } finally {
+        done = true
+        threadFinished(id)
+        scheduler()
       }
     })
   }

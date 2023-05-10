@@ -77,14 +77,14 @@ package object chiseltester {
   }
 
   @tailrec
-  def |->[T <: Module](condition: => Boolean): Unit = {
+  def ->[T <: Module](condition: => Boolean): Unit = {
     if (!condition) {
       Context().backend.getMainClock.step()
-      |->(condition)
+      ->(condition)
     }
   }
 
-  def |->[T <: Module](cycles: Int): Unit = {
+  def ->[T <: Module](cycles: Int): Unit = {
     Context().backend.getMainClock.step(cycles)
   }
 }

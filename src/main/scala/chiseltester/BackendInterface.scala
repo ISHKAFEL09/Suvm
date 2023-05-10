@@ -2,7 +2,9 @@ package chiseltester
 
 import chisel3._
 
-trait AbstractTesterThread
+trait AbstractTesterThread {
+  def thread: Thread
+}
 
 trait BackendInterface {
   def pokeBits(signal: Bits, value: BigInt): Unit
