@@ -27,5 +27,5 @@ trait BackendInstance[T <: Module] extends BackendInterface {
 trait TestEnvInterface {
   def testerFail(msg: String): Unit
 
-  def checkpoint()
+  def checkpoint(): Unit
 }

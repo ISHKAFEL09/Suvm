@@ -1,7 +1,7 @@
 package uvm
 
 class UVMRoot extends UVMComponent("__top__") {
-
+  override val _traceLevel: Int = 4
 }
 
 object UVMRoot {

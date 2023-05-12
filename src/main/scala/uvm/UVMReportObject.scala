@@ -2,17 +2,29 @@ package uvm
 
 import ENUM_UVM_VERBOSITY._
 
-class UVMReportObject(name: String) extends UVMObject(name) {
-  def getReportVerbosityLevel(severity: uvmSeverity = UVM_INFO, id: String = ""): uvmVerbosity = {
-    // TODO:
-    UVM_FULL
+class UVMReportObject(name: String = "") extends UVMObject(name) {
+  private var mReportHandler: Option[UVMReportHandler] = None
+  
+  protected val _traceLevel: Int = 2
+
+  def setReportHandle(handler: UVMReportHandler): Unit = mReportHandler = Some(handler)
+
+  def mReportHandleInit(): Unit = {
+    if (mReportHandler.isEmpty) {
+      setReportHandle(new UVMReportHandler(getName)) // TODO: use factory
+    }
   }
 
-  def uvmReportEnabled(verbosity: uvmVerbosity, severity: uvmSeverity = UVM_INFO, id: String = ""): Boolean =
-    getReportVerbosityLevel(severity, id) >= verbosity
+  def getReportVerbosityLevel(severity: uvmSeverity = UVM_INFO, idx: String = ""): uvmVerbosity = {
+    mReportHandleInit()
+    mReportHandler.get.getVerbosityLevel(severity, idx)
+  }
+
+  def uvmReportEnabled(verbosity: uvmVerbosity, severity: uvmSeverity = UVM_INFO, idx: String = ""): Boolean =
+    getReportVerbosityLevel(severity, idx) >= verbosity
 
   def uvmReport(severity: uvmSeverity,
-                id: String,
+                idx: String,
                 msg: String,
                 _verbosity: uvmVerbosity = UVM_MEDIUM,
                 trace: String = "",
@@ -27,51 +39,51 @@ class UVMReportObject(name: String) extends UVMObject(name) {
     }
 
     // TODO:
-    println(s"$trace\n[$severity@$id]: $msg")
+    println(s"$trace\n[$severity@$idx]: $msg")
   }
 
-  def uvmReportInfo(id: String,
+  def uvmReportInfo(idx: String,
                     msg: String,
                     verbosity: uvmVerbosity = UVM_MEDIUM,
                     trace: String = "",
                     contextName: String = "",
                     reportEnabledChecked: Boolean = false): Unit = {
-    uvmReport(UVM_INFO, id, msg, verbosity, trace, contextName, reportEnabledChecked)
+    uvmReport(UVM_INFO, idx, msg, verbosity, trace, contextName, reportEnabledChecked)
   }
 
-  def uvmReportWarning(id: String,
+  def uvmReportWarning(idx: String,
                        msg: String,
                        verbosity: uvmVerbosity = UVM_NONE,
                        trace: String = "",
                        contextName: String = "",
                        reportEnabledChecked: Boolean = false): Unit = {
-    uvmReport(UVM_WARNING, id, msg, verbosity, trace, contextName, reportEnabledChecked)
+    uvmReport(UVM_WARNING, idx, msg, verbosity, trace, contextName, reportEnabledChecked)
   }
 
-  def uvmReportFatal(id: String,
+  def uvmReportFatal(idx: String,
                      msg: String,
                      verbosity: uvmVerbosity = UVM_NONE,
                      trace: String = "",
                      contextName: String = "",
                      reportEnabledChecked: Boolean = false): Unit = {
-    uvmReport(UVM_FATAL, id, msg, verbosity, trace, contextName, reportEnabledChecked)
+    uvmReport(UVM_FATAL, idx, msg, verbosity, trace, contextName, reportEnabledChecked)
   }
   
-  def uvmInfo(id: String, msg: String, verbosity: uvmVerbosity): Unit = {
-    if (uvmReportEnabled(verbosity, UVM_INFO, id)) {
-      uvmReportInfo(id, msg, verbosity, getTrace(), "", reportEnabledChecked = true)
+  def uvmInfo(idx: String, msg: String, verbosity: uvmVerbosity): Unit = {
+    if (uvmReportEnabled(verbosity, UVM_INFO, idx)) {
+      uvmReportInfo(idx, msg, verbosity, getTrace(_traceLevel), "", reportEnabledChecked = true)
     }
   }
 
-  def uvmWarning(id: String, msg: String): Unit = {
-    if (uvmReportEnabled(UVM_NONE, UVM_WARNING, id)) {
-      uvmReportWarning(id, msg, UVM_NONE, getTrace(), "", reportEnabledChecked = true)
+  def uvmWarning(idx: String, msg: String): Unit = {
+    if (uvmReportEnabled(UVM_NONE, UVM_WARNING, idx)) {
+      uvmReportWarning(idx, msg, UVM_NONE, getTrace(_traceLevel), "", reportEnabledChecked = true)
     }
   }
 
-  def uvmFatal(id: String, msg: String): Unit = {
-    if (uvmReportEnabled(UVM_NONE, UVM_FATAL, id)) {
-      uvmReportFatal(id, msg, UVM_NONE, getTrace(), "", reportEnabledChecked = true)
+  def uvmFatal(idx: String, msg: String): Unit = {
+    if (uvmReportEnabled(UVM_NONE, UVM_FATAL, idx)) {
+      uvmReportFatal(idx, msg, UVM_NONE, getTrace(_traceLevel), "", reportEnabledChecked = true)
     }
   }
 }

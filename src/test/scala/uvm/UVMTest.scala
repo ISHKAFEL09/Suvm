@@ -8,11 +8,15 @@ class UVMTest extends AnyFlatSpec with ChiselTester with Matchers {
   behavior of "UVMTest"
 
   it should "pass UVMObject test" in {
-    val obj = new UVMObject("obj") {}
+    val obj = new UVMObject("obj") {
+      val obj2 = new UVMObject("obj2") {
+        uvmInfo("OBJ2", "this is obj2", UVM_LOW)
+      }
+    }
     println(obj.getUVMSeeding)
     obj.setUVMSeeding(false)
     println(obj.getUVMSeeding)
-    UVMCoreService().getRoot.uvmInfo("UVM TEST", "this is uvm test msg", UVM_NONE)
+    uvmInfo("UVM TEST", "this is uvm test msg", UVM_LOW)
   }
 
   it should "pass UVMReportObject test" in {
