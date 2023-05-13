@@ -9,11 +9,11 @@ class UVMReportHandler(name: String = "UVMReportHandler") extends UVMObject(name
 
   private var defaultFileHandle: Option[File] = None
 
-  private var severity2actions = mutable.HashMap.empty[uvmSeverity, Seq[uvmAction]]
+  private var severity2actions = mutable.HashMap.empty[uvmSeverity, uvmAction]
 
   private var severity2File = mutable.HashMap.empty[uvmSeverity, Option[File]]
 
-  def setSeverityAction(severity: uvmSeverity, action: Seq[uvmAction]): Unit = {
+  def setSeverityAction(severity: uvmSeverity, action: uvmAction): Unit = {
     severity2actions(severity) = action
   }
 
@@ -24,6 +24,9 @@ class UVMReportHandler(name: String = "UVMReportHandler") extends UVMObject(name
   def getVerbosityLevel(severity: uvmSeverity = UVM_INFO, idx: String = ""): uvmVerbosity = {
     mMaxVerbosityLevel // TODO:  
   }
+
+  def setVerbosityLevel(verbosity: uvmVerbosity): Unit =
+    mMaxVerbosityLevel = verbosity
 
   def initialize(): Unit = {
     defaultFileHandle = None
@@ -39,4 +42,19 @@ class UVMReportHandler(name: String = "UVMReportHandler") extends UVMObject(name
     setSeverityFile(UVM_ERROR, defaultFileHandle)
     setSeverityFile(UVM_FATAL, defaultFileHandle)
   }
+
+  def processReportMessage(reportMessage: UVMReportMessage): Unit = {
+    // TODO: overrides
+    reportMessage.setReportHandler(this)
+    reportMessage.setAction(getAction(reportMessage.severity, reportMessage.idx))
+    UVMCoreService().getReportServer.processReportMessage(reportMessage)
+  }
+
+  def getAction(severity: uvmSeverity, idx: String): uvmAction = {
+    // TODO: overrides
+
+    severity2actions.getOrElse(severity, Seq(UVM_NO_ACTION))
+  }
+
+  initialize()
 }

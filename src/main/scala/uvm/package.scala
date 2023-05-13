@@ -84,5 +84,5 @@ package object uvm {
     val UVM_RM_RECORD = Value
   }
 
-  type uvmAction = ENUM_UVM_ACTION.Value
+  type uvmAction = Seq[ENUM_UVM_ACTION.Value]
 }

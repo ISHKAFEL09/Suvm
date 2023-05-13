@@ -6,6 +6,8 @@ trait UVMCoreService {
   def setUVMSeeding(enable: Boolean): Unit
 
   def getRoot: UVMRoot
+
+  def getReportServer: UVMReportServer
 }
 
 object UVMCoreService {
@@ -24,10 +26,18 @@ object UVMCoreService {
 
 class UVMDefaultCoreService extends UVMCoreService {
   private var mUseUVMSeeding: Boolean = true
+  private var reportServer: Option[UVMReportServer] = None
 
   override def getUVMSeeding: Boolean = mUseUVMSeeding
 
   override def setUVMSeeding(enable: Boolean): Unit = mUseUVMSeeding = enable
 
   override def getRoot: UVMRoot = UVMRoot()
+
+  override def getReportServer: UVMReportServer = reportServer match {
+    case Some(value) => value
+    case None =>
+      reportServer = Some(new UVMDefaultReportServer)
+      reportServer.get
+  }
 }
