@@ -21,12 +21,22 @@ class UVMTest extends AnyFlatSpec with ChiselTester with Matchers {
   }
 
   it should "pass UVMReportObject test" in {
-    class Report extends UVMReportObject("Report") {
+    class Report(name: String) extends UVMReportObject(name) {
       setReportVerbosityLevel(UVM_HIGH)
-      uvmInfo("ReportObject", "this is a info test message", UVM_LOW)
-      uvmWarning("ReportObject", "this is a warn test message")
-      uvmFatal("ReportObject", "this is a fatal test message")
+//      uvmInfo("ReportObject", "this is a info test message", UVM_LOW)
+//      uvmWarning("ReportObject", "this is a warn test message")
+//      uvmFatal("ReportObject", "this is a fatal test message")
     }
-    new Report
+
+    class Report1(name: String) extends Report(name)
+
+    val report = create((s: String) => new Report(s), "MyReport")
+    val report1 = create((s: String) => new Report1(s), "MyReport1")
+    val report2 = create((s: String) => new Report(s), "MyReport2")
+    println(report, report1, report2)
+
+    UVMCoreService().getFactory.setTypeOverrideByName(classOf[Report], (s: String) => new Report1(s))
+    val report3 = create((s: String) => new Report(s), "OverrideReport")
+    println(report3)
   }
 }

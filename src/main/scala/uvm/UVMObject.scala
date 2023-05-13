@@ -22,7 +22,7 @@ abstract class UVMObject(val name: String) extends UVMVoid {
 
   def getInstID: Int = mInstID
 
-  override def toString: String = ""
+  override def toString: String = getFullName
 }
 
 object UVMObject {
@@ -30,4 +30,3 @@ object UVMObject {
 
   def getInstCount: Int = mInstCount
 }
-

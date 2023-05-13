@@ -8,6 +8,10 @@ trait UVMCoreService {
   def getRoot: UVMRoot
 
   def getReportServer: UVMReportServer
+
+  def getFactory: UVMFactory
+
+  def setFactory(factory: UVMFactory): Unit
 }
 
 object UVMCoreService {
@@ -27,6 +31,7 @@ object UVMCoreService {
 class UVMDefaultCoreService extends UVMCoreService {
   private var mUseUVMSeeding: Boolean = true
   private var reportServer: Option[UVMReportServer] = None
+  private var factory: Option[UVMFactory] = None
 
   override def getUVMSeeding: Boolean = mUseUVMSeeding
 
@@ -40,4 +45,13 @@ class UVMDefaultCoreService extends UVMCoreService {
       reportServer = Some(new UVMDefaultReportServer)
       reportServer.get
   }
+
+  override def getFactory: UVMFactory = factory match {
+    case Some(value) => value
+    case None =>
+      factory = Some(new UVMDefaultFactory)
+      factory.get
+  }
+
+  override def setFactory(factory: UVMFactory): Unit = this.factory = Some(factory)
 }

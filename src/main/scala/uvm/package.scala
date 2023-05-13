@@ -1,3 +1,6 @@
+import scala.language.implicitConversions
+import scala.reflect.ClassTag
+
 package object uvm {
   // private, for uvm
   private[uvm] def getTrace(level: Int = 2): String = {
@@ -10,6 +13,12 @@ package object uvm {
     val top = UVMRoot()
     uvmFatal("Init", "this it uvmInit")
   }
+
+  implicit class classOps[T](c: Class[T]) {
+    def getPureName: String = c.getSimpleName.replaceAll("\\$.+?$", "")
+  }
+
+  implicit def class2string[T](c: Class[T]): String = c.getPureName
 
   // public
   object ENUM_UVM_SEVERITY extends Enumeration {
@@ -85,4 +94,18 @@ package object uvm {
   }
 
   type uvmAction = Seq[ENUM_UVM_ACTION.Value]
+
+  def create[T <: UVMObject : ClassTag](f: String => T, name: String): T = {
+    val objName = implicitly[ClassTag[T]].runtimeClass.getPureName
+    val factory = UVMCoreService().getFactory
+    val wrapper = factory.getWrapperByName[T](objName)
+    wrapper match {
+      case Some(wrapper) =>
+        factory.createObjectByType(wrapper, "", name)
+      case None =>
+        val w = new UVMObjectRegistry(objName, f)
+        factory.register(w)
+        factory.createObjectByType(w, "", name)
+    }
+  }
 }
