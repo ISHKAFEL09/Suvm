@@ -11,7 +11,7 @@ class UVMReportObject(name: String = "") extends UVMObject(name) {
 
   def mReportHandlerInit(): Unit = {
     if (mReportHandler.isEmpty) {
-      setReportHandler(create((s: String) => new UVMReportHandler(s), getName))
+      setReportHandler(create(getName) { s => new UVMReportHandler(s) })
     }
   }
 

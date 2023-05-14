@@ -95,17 +95,32 @@ package object uvm {
 
   type uvmAction = Seq[ENUM_UVM_ACTION.Value]
 
-  def create[T <: UVMObject : ClassTag](f: String => T, name: String): T = {
+  def create[T <: UVMObject : ClassTag](name: String)(f: String => T): T = {
     val objName = implicitly[ClassTag[T]].runtimeClass.getPureName
     val factory = UVMCoreService().getFactory
     val wrapper = factory.getWrapperByName[T](objName)
     wrapper match {
       case Some(wrapper) =>
-        factory.createObjectByType(wrapper, "", name)
+        factory.createObjectByType(wrapper, name)
       case None =>
         val w = new UVMObjectRegistry(objName, f)
         factory.register(w)
-        factory.createObjectByType(w, "", name)
+        factory.createObjectByType(w, name)
+    }
+  }
+
+  def create[T <: UVMComponent : ClassTag](name: String, parent: UVMComponent)(
+    f: (String, UVMComponent) => T): T = {
+    val objName = implicitly[ClassTag[T]].runtimeClass.getPureName
+    val factory = UVMCoreService().getFactory
+    val wrapper = factory.getWrapperByName[T](objName)
+    wrapper match {
+      case Some(wrapper) =>
+        factory.createComponentByType(wrapper, name, Some(parent))
+      case None =>
+        val w = new UVMComponentRegistry(objName, (s: String, p: Option[UVMComponent]) => f(s, p.get))
+        factory.register(w)
+        factory.createComponentByType(w, name, Some(parent))
     }
   }
 }

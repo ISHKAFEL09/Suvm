@@ -2,16 +2,16 @@ package uvm
 
 trait UVMObjectWrapper[+T] {
   def createObject(name: String): Option[T] = None
-  def createComponent(name: String, parent: UVMComponent): Option[T] = None
+  def createComponent(name: String, parent: Option[UVMComponent]): Option[T] = None
   def getTypeName: String
   def initialize(): Unit
 }
 
 class UVMComponentRegistry[+T <: UVMComponent](typeName: String = "<unknown>",
-                                               create: (String, UVMComponent) => T)
+                                               create: (String, Option[UVMComponent]) => T)
   extends UVMObjectWrapper[T] {
 
-  override def createComponent(name: String, parent: UVMComponent): Option[T] =
+  override def createComponent(name: String, parent: Option[UVMComponent]): Option[T] =
     Some(create(name, parent))
 
   override def getTypeName: String = typeName
