@@ -40,7 +40,7 @@ class TLBTest extends AnyFlatSpec with ChiselTester with Matchers {
 //      assert (c.io.resp.miss.peek().litToBoolean)
       var cnt = 10
       val a = fork {
-        while (cnt > -100) {
+        while (cnt > -10) {
           println(cnt)
           cnt -= 1
           ->(1)
@@ -50,14 +50,20 @@ class TLBTest extends AnyFlatSpec with ChiselTester with Matchers {
       val b = fork {
         ->(cnt == 0)
         println(s"wait done!$cnt")
-        if (!a.done) a.kill()
       }
 
-      val d = a ++ b
-      println(d.done)
-      d.join()
+      val e = fork {
+        ->(cnt == -3)
+        println(s"wait done!$cnt")
+      }
 
-      println(a.done, b.done, d.done)
+      val d = a ++ b ++ e
+      println(d.done)
+      d.joinAny()
+      d.kill()
+
+      ->(3)
+      println(a.done, b.done, d.done, e.done)
     }
   }
 }

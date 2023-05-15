@@ -9,11 +9,9 @@ import scala.collection.mutable.{ArrayBuffer, ListBuffer}
 private[chiseltester] class TesterThreadList(elements: Seq[AbstractTesterThread]) {
   def toSeq: Seq[AbstractTesterThread] = elements
 
-  def join(): Unit = {
-    elements foreach { e =>
-      Context().backend.doJoin(e)
-    }
-  }
+  def join(): Unit = ->(done)
+
+  def joinAny(): Unit = ->(elements.exists(_.done))
 
   def ++(others: TesterThreadList): TesterThreadList = {
     new TesterThreadList(elements ++ others.toSeq)
@@ -23,13 +21,9 @@ private[chiseltester] class TesterThreadList(elements: Seq[AbstractTesterThread]
     new TesterThreadList(elements :+ Context().backend.doFork(() => runnable))
   }
 
-  def kill(): Unit = {
-    elements foreach { e =>
-      e.thread.interrupt()
-    }
-  }
+  def kill(): Unit = elements.foreach(_.kill())
 
-  def done: Boolean = elements.forall(!_.thread.isAlive)
+  def done: Boolean = elements.forall(_.done)
 }
 
 private[chiseltester] trait ThreadedBackend {
@@ -44,20 +38,27 @@ private[chiseltester] trait ThreadedBackend {
     }
     val waiting: Semaphore = new Semaphore(0)
     var done: Boolean = false
+    var killFlag: Boolean = false
+    var waitFlag: Boolean = false
 
     val thread: Thread = new Thread(() => {
       try {
         waiting.acquire()
         runnable()
-      } catch {
-        case _: InterruptedException =>
-        case e@(_: Exception | _: Error) => onException(e)
-      } finally {
-        done = true
-        threadFinished(id)
+        clear()
         scheduler()
+      } catch {
+        case _: InterruptedException => println("Thread killed!")
+        case e@(_: Exception | _: Error) => onException(e)
       }
     })
+
+    override def kill(): Unit = killFlag = true
+
+    def clear(): Unit = {
+      done = true
+      threadFinished(id)
+    }
   }
 
   var current: Option[TesterThread] = None
@@ -66,6 +67,7 @@ private[chiseltester] trait ThreadedBackend {
   val joinedThreads = mutable.HashMap.empty[TesterThread, Seq[TesterThread]]
   val activeThreads: ListBuffer[TesterThread] = mutable.ListBuffer.empty[TesterThread]
   val blockedThreads = mutable.HashMap.empty[Clock, mutable.ListBuffer[TesterThread]]
+  val zombieThreads: ListBuffer[TesterThread] = mutable.ListBuffer.empty[TesterThread]
 
   def runThreads(threads: Seq[TesterThread]): Map[Clock, Seq[TesterThread]] = {
     require(activeThreads.isEmpty)
@@ -85,14 +87,21 @@ private[chiseltester] trait ThreadedBackend {
     rtn
   }
 
-  def scheduler(): Unit = {
+  @annotation.tailrec
+  final def scheduler(): Unit = {
     if (activeThreads.isEmpty) {
       current = None
       mainSemaphore.release()
     } else {
       val nextThread = activeThreads.remove(0)
-      current = Some(nextThread)
-      nextThread.waiting.release()
+      if (!nextThread.killFlag) {
+        current = Some(nextThread)
+        nextThread.waiting.release()
+      } else {
+        nextThread.clear()
+        zombieThreads += nextThread
+        scheduler()
+      }
     }
   }
 

@@ -76,15 +76,11 @@ package object chiseltester {
     fork(run1).fork(run2).join()
   }
 
-  @tailrec
   def ->[T <: Module](condition: => Boolean): Unit = {
-    if (!condition) {
-      Context().backend.getMainClock.step()
-      ->(condition)
-    }
+    Context().backend.doWait(condition)
   }
 
   def ->[T <: Module](cycles: Int): Unit = {
-    Context().backend.getMainClock.step(cycles)
+    Context().backend.doWait(cycles)
   }
 }

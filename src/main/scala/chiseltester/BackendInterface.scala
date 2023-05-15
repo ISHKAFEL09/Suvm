@@ -4,6 +4,10 @@ import chisel3._
 
 trait AbstractTesterThread {
   def thread: Thread
+
+  def done: Boolean
+
+  def kill(): Unit
 }
 
 trait BackendInterface {
@@ -16,6 +20,10 @@ trait BackendInterface {
   def doFork(runnable: () => Unit): AbstractTesterThread
 
   def doJoin(thread: AbstractTesterThread): Unit
+
+  def doWait(condition: => Boolean): Unit
+
+  def doWait(cycles: Int): Unit
 
   def getMainClock: Clock
 }

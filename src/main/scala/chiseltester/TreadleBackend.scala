@@ -60,10 +60,15 @@ private[chiseltester] class TreadleBackend[T <: Module](dut: T,
             }
           }
         }
-        debugLog("clock step")
+//        debugLog("clock step")
         runThreads(threads).foreach { case (clk, ts) =>
           blockedThreads.getOrElseUpdate(clk, mutable.ListBuffer.empty[TesterThread]) ++= ts
         }
+        zombieThreads.foreach { i =>
+          if (i.thread.isAlive)
+            i.thread.interrupt()
+        }
+        zombieThreads.clear()
         Context().env.checkpoint()
         tester.step(1)
       }
@@ -104,5 +109,24 @@ private[chiseltester] class TreadleBackend[T <: Module](dut: T,
   }
 
   override def getMainClock: Clock = getModule.clock
+
+  @annotation.tailrec
+  final override def doWait(condition: => Boolean): Unit = {
+    val currentThread = current.get
+    if (!condition) {
+      if (activeThreads.exists(!_.waitFlag)) {
+        currentThread.waitFlag = true
+        activeThreads += currentThread
+        scheduler()
+        currentThread.waiting.acquire()
+      } else {
+        currentThread.waitFlag = false
+        step(dut.clock, 1)
+      }
+      doWait(condition)
+    }
+  }
+
+  override def doWait(cycles: Int): Unit = step(dut.clock, cycles)
 }
 
