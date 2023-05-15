@@ -21,7 +21,10 @@ private[chiseltester] class TesterThreadList(elements: Seq[AbstractTesterThread]
     new TesterThreadList(elements :+ Context().backend.doFork(() => runnable))
   }
 
-  def kill(): Unit = elements.foreach(_.kill())
+  def kill(): Unit = {
+    elements.foreach(_.kill())
+    ->(done)
+  }
 
   def done: Boolean = elements.forall(_.done)
 }
@@ -49,7 +52,9 @@ private[chiseltester] trait ThreadedBackend {
         scheduler()
       } catch {
         case _: InterruptedException => println("Thread killed!")
-        case e@(_: Exception | _: Error) => onException(e)
+        case e@(_: Exception | _: Error) =>
+          onException(e)
+          scheduler()
       }
     })
 

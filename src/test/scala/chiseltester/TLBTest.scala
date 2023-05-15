@@ -58,9 +58,9 @@ class TLBTest extends AnyFlatSpec with ChiselTester with Matchers {
       }
 
       val d = a ++ b ++ e
-      println(d.done)
       d.joinAny()
       d.kill()
+      assert(d.done)
 
       ->(3)
       println(a.done, b.done, d.done, e.done)
