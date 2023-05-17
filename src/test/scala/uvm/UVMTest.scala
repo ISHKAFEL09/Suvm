@@ -8,7 +8,7 @@ class UVMTest extends AnyFlatSpec with ChiselTester with Matchers {
   behavior of "UVMTest"
 
   it should "pass UVMObject test" in {
-//    UVMCoreService().getRoot.setReportVerbosityLevel(UVM_NONE)
+//    top.setReportVerbosityLevel(UVM_NONE)
     val obj = new UVMObject("obj") {
       val obj2 = new UVMObject("obj2") {
         uvmInfo("OBJ2", "this is obj2", UVM_LOW)
@@ -54,15 +54,16 @@ class UVMTest extends AnyFlatSpec with ChiselTester with Matchers {
   it should "pass UVMComponent test" in {
     class Component(name: String) extends UVMComponent(name, None) {
       class Component1(name: String, parent: UVMComponent) extends UVMComponent(name, Some(parent))
-      val comp1 = create("Component1", this) { case (s, p) =>
+      val comp1 = create("comp1", this) { case (s, p) =>
         new Component1(s, p)
       }
-      val comp2 = create("Component2", this) { case (s, p) =>
+      val comp2 = create("", comp1) { case (s, p) =>
         new Component1(s, p)
       }
     }
     val uvmTest = new Component("uvmTest")
     println(uvmTest.getParent, uvmTest.comp1.getParent, uvmTest.comp2.getParent)
     println(uvmTest.getFullName, uvmTest.comp1.getFullName, uvmTest.comp2.getFullName)
+    println(top.getChildren, uvmTest.getChildren, uvmTest.comp1.getChildren)
   }
 }

@@ -26,7 +26,7 @@ abstract class UVMObject(val name: String) extends UVMVoid {
 }
 
 object UVMObject {
-  private var mInstCount: Int = 0
+  var mInstCount: Int = 0
 
   def getInstCount: Int = mInstCount
 }

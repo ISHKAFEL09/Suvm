@@ -58,29 +58,31 @@ package object uvm {
 
   def UVM_DEBUG: uvmVerbosity = ENUM_UVM_VERBOSITY.UVM_DEBUG
 
+  lazy val top: UVMRoot = UVMCoreService().getRoot
+
   lazy val uvmReportEnabled: (uvmVerbosity, uvmSeverity, String) => Boolean =
-    UVMCoreService().getRoot.uvmReportEnabled
+    top.uvmReportEnabled
 
   lazy val uvmReport: (uvmSeverity, String, String, uvmVerbosity, String, String, Boolean) => Unit =
-    UVMCoreService().getRoot.uvmReport
+    top.uvmReport
 
   lazy val uvmReportInfo: (String, String, uvmVerbosity, String, String, Boolean) => Unit =
-    UVMCoreService().getRoot.uvmReportInfo
+    top.uvmReportInfo
 
   lazy val uvmReportWarning: (String, String, uvmVerbosity, String, String, Boolean) => Unit =
-    UVMCoreService().getRoot.uvmReportWarning
+    top.uvmReportWarning
 
   lazy val uvmReportFatal: (String, String, uvmVerbosity, String, String, Boolean) => Unit =
-    UVMCoreService().getRoot.uvmReportFatal
+    top.uvmReportFatal
 
   lazy val uvmInfo: (String, String, uvmVerbosity) => Unit =
-    UVMCoreService().getRoot.uvmInfo
+    top.uvmInfo
 
   lazy val uvmWarning: (String, String) => Unit =
-    UVMCoreService().getRoot.uvmWarning
+    top.uvmWarning
 
   lazy val uvmFatal: (String, String) => Unit =
-    UVMCoreService().getRoot.uvmFatal
+    top.uvmFatal
 
   object ENUM_UVM_ACTION extends Enumeration {
     val UVM_NO_ACTION = Value
