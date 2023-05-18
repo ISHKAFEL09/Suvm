@@ -97,6 +97,33 @@ package object uvm {
 
   type uvmAction = Seq[ENUM_UVM_ACTION.Value]
 
+  object ENUM_PHASE_TYPE extends Enumeration {
+    val UVM_PHASE_IMP = Value
+    val UVM_PHASE_NODE = Value
+    val UVM_PHASE_TERMINAL = Value
+    val UVM_PHASE_SCHEDULE = Value
+    val UVM_PHASE_DOMAIN = Value
+    val UVM_PHASE_GLOBAL = Value
+  }
+
+  type uvmPhaseType = ENUM_PHASE_TYPE.Value
+
+  object ENUM_PHASE_STATE extends Enumeration {
+    val UVM_PHASE_UNINITIALIZED = Value
+    val UVM_PHASE_DORMANT = Value
+    val UVM_PHASE_SCHEDULED = Value
+    val UVM_PHASE_SYNCING = Value
+    val UVM_PHASE_STARTED = Value
+    val UVM_PHASE_EXECUTING = Value
+    val UVM_PHASE_READY_TO_END = Value
+    val UVM_PHASE_ENDED = Value
+    val UVM_PHASE_CLEANUP = Value
+    val UVM_PHASE_DONE = Value
+    val UVM_PHASE_JUMPING = Value
+  }
+
+  type uvmPhaseState = ENUM_PHASE_STATE.Value
+
   def create[T <: UVMObject : ClassTag](name: String)(f: String => T): T = {
     val objName = implicitly[ClassTag[T]].runtimeClass.getPureName
     val factory = UVMCoreService().getFactory
