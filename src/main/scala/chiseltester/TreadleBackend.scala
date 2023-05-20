@@ -34,7 +34,7 @@ private[chiseltester] class TreadleBackend[T <: Module](dut: T,
   def getModule: T = dut
 
   override def run(testFn: T => Unit): Unit = {
-    val mainThread = new TesterThread(() => {
+    val mainThread = new TesterThread("mainThread", () => {
       tester.poke("reset", 1)
       tester.step(1)
       tester.poke("reset", 0)
@@ -65,8 +65,10 @@ private[chiseltester] class TreadleBackend[T <: Module](dut: T,
           blockedThreads.getOrElseUpdate(clk, mutable.ListBuffer.empty[TesterThread]) ++= ts
         }
         zombieThreads.foreach { i =>
-          if (i.thread.isAlive)
+          if (i.thread.isAlive) {
+            println(s"thread killed: ${i.name}")
             i.thread.interrupt()
+          }
         }
         zombieThreads.clear()
         Context().env.checkpoint()

@@ -26,7 +26,7 @@ class UVMPhase(name: String = "uvmPhase",
   private val mPredecessors = collection.mutable.ListBuffer.empty[UVMPhase]
   if (parent.isEmpty && Seq(UVM_PHASE_SCHEDULE, UVM_PHASE_DOMAIN).contains(phaseType)) {
     mEndNode = Some(new UVMPhase(s"${name}_end", UVM_PHASE_TERMINAL, Some(this)))
-    mSuccessors += mEndNode
+    mSuccessors += mEndNode.get
     mEndNode.get.mPredecessors += this
   }
 

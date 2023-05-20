@@ -5,7 +5,7 @@ import chisel3._
 trait AbstractTesterThread {
   def thread: Thread
 
-  def done: Boolean
+  def isDone: Boolean
 
   def kill(): Unit
 }
@@ -17,7 +17,7 @@ trait BackendInterface {
 
   def step(signal: Clock, cycles: Int): Unit
 
-  def doFork(runnable: () => Unit): AbstractTesterThread
+  def doFork(name: String, runnable: () => Unit): AbstractTesterThread
 
   def doJoin(thread: AbstractTesterThread): Unit
 

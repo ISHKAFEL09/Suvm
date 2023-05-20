@@ -68,12 +68,12 @@ package object chiseltester {
     def step(n: Int = 1): Unit = Context().backend.step(x, n)
   }
 
-  def fork(runnable: => Unit): TesterThreadList = {
-    new TesterThreadList(Seq(Context().backend.doFork(() => runnable)))
+  def fork(name: String = "thread")(runnable: => Unit): TesterThreadList = {
+    new TesterThreadList(Seq(Context().backend.doFork(name, () => runnable)))
   }
 
   def parallel(run1: => Unit, run2: => Unit): Unit = {
-    fork(run1).fork(run2).join()
+    fork()(run1).fork()(run2).join()
   }
 
   def ->[T <: Module](condition: => Boolean): Unit = {

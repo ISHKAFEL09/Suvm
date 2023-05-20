@@ -11,14 +11,14 @@ private[chiseltester] class TesterThreadList(elements: Seq[AbstractTesterThread]
 
   def join(): Unit = ->(done)
 
-  def joinAny(): Unit = ->(elements.exists(_.done))
+  def joinAny(): Unit = ->(elements.exists(_.isDone))
 
   def ++(others: TesterThreadList): TesterThreadList = {
     new TesterThreadList(elements ++ others.toSeq)
   }
 
-  def fork(runnable: => Unit): TesterThreadList = {
-    new TesterThreadList(elements :+ Context().backend.doFork(() => runnable))
+  def fork(name: String = "thread")(runnable: => Unit): TesterThreadList = {
+    new TesterThreadList(elements :+ Context().backend.doFork(name, () => runnable))
   }
 
   def kill(): Unit = {
@@ -26,17 +26,21 @@ private[chiseltester] class TesterThreadList(elements: Seq[AbstractTesterThread]
     ->(done)
   }
 
-  def done: Boolean = elements.forall(_.done)
+  def done: Boolean = elements.forall(_.isDone)
 }
 
 private[chiseltester] trait ThreadedBackend {
   val interruptedException = new ConcurrentLinkedQueue[Throwable]()
   def onException(e: Throwable): Unit = interruptedException.offer(e)
 
-  class TesterThread(runnable: () => Unit,
+  class TesterThread(val name: String = "thread",
+                     runnable: () => Unit,
                      parent: Option[TesterThread]) extends AbstractTesterThread { id =>
+    private val children: ListBuffer[AbstractTesterThread] = collection.mutable.ListBuffer.empty[AbstractTesterThread]
     val level: Int = parent match {
-      case Some(value) => value.level + 1
+      case Some(value) =>
+        value.children += this
+        value.level + 1
       case None => 0
     }
     val waiting: Semaphore = new Semaphore(0)
@@ -50,15 +54,24 @@ private[chiseltester] trait ThreadedBackend {
         runnable()
         clear()
         scheduler()
+        println(s"thread done: $name")
       } catch {
-        case _: InterruptedException => println("Thread killed!")
+        case _: InterruptedException =>
         case e@(_: Exception | _: Error) =>
           onException(e)
           scheduler()
       }
     })
+    println(s"thread created: $name")
 
-    override def kill(): Unit = killFlag = true
+    def isDone: Boolean = {
+      done && children.forall(_.isDone)
+    }
+
+    override def kill(): Unit = {
+      children.foreach(_.kill())
+      killFlag = true
+    }
 
     def clear(): Unit = {
       done = true
@@ -118,9 +131,9 @@ private[chiseltester] trait ThreadedBackend {
     }
   }
 
-  def doFork(runnable: () => Unit): TesterThread = {
+  def doFork(name: String, runnable: () => Unit): TesterThread = {
     val currentThread = current.get
-    val newThread = new TesterThread(runnable = runnable, parent = Some(currentThread))
+    val newThread = new TesterThread(name, runnable = runnable, parent = Some(currentThread))
     allThreads += newThread
     activeThreads.prependAll(Seq(newThread, currentThread))
     newThread.thread.start()
