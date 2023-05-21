@@ -129,6 +129,13 @@ private[chiseltester] class TreadleBackend[T <: Module](dut: T,
     }
   }
 
-  override def doWait(cycles: Int): Unit = step(dut.clock, cycles)
+  override def doWait(cycles: Int): Unit = {
+    if (cycles == 0) {
+      val currentThread = current.get
+      activeThreads += currentThread
+      scheduler()
+      currentThread.waiting.acquire()
+    } else
+      step(dut.clock, cycles)
+  }
 }
-

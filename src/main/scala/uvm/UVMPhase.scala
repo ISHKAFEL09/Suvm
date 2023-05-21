@@ -1,5 +1,6 @@
 package uvm
 
+import chiseltester._
 import ENUM_PHASE_TYPE._
 import ENUM_PHASE_STATE._
 
@@ -53,7 +54,32 @@ class UVMPhase(name: String = "uvmPhase",
     }
   }
 
+  def traverse(comp: UVMComponent, phase: UVMPhase, state: uvmPhaseState): Unit = {}
+
+  def execute(comp: UVMComponent, phase: UVMPhase): Unit = {}
+
+  def execFunc(comp: UVMComponent, phase: UVMPhase): Unit = {}
+
+  def execTask(comp: UVMComponent, phase: UVMPhase): Unit = {}
+
   def executePhase(): Unit = {
 
+  }
+}
+
+object UVMPhase {
+  private val mPhaseHopper = collection.mutable.Queue.empty[UVMPhase]
+
+  def mRunPhases(): Unit = {
+    mPhaseHopper += UVMDomain.getCommonDomain
+
+    def phaseLoop(): Unit = {
+      -> (mPhaseHopper.nonEmpty)
+      val phase = mPhaseHopper.dequeue()
+      fork(s"phase_${phase.getName}") {
+        phase.executePhase()
+      }
+      -> (0)
+    }
   }
 }

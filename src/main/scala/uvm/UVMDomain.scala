@@ -13,7 +13,14 @@ object UVMDomain {
   def getCommonDomain: UVMDomain = {
     mDomains.getOrElseUpdate("common", {
       val domain = new UVMDomain("common")
-      domain.add()
+      domain.add(UVMCommonPhase("build"))
+      domain.add(UVMCommonPhase("connect"))
+      domain.add(UVMCommonPhase("run"))
+      domain.add(UVMCommonPhase("extract"))
+      domain.add(UVMCommonPhase("check"))
+      domain.add(UVMCommonPhase("report"))
+      domain.add(UVMCommonPhase("final"))
+      domain
     })
   }
 }
