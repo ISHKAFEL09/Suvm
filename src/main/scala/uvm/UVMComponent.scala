@@ -63,11 +63,11 @@ abstract class UVMComponent(name: String, parent: Option[UVMComponent] = None) e
     }
   }
 
-  def buildPhase(phase: UVMPhase): Unit
-  def connectPhase(phase: UVMPhase): Unit
-  def runPhase(phase: UVMPhase): Unit
-  def extractPhase(phase: UVMPhase): Unit
-  def checkPhase(phase: UVMPhase): Unit
-  def reportPhase(phase: UVMPhase): Unit
-  def finalPhase(phase: UVMPhase): Unit
+  def buildPhase(phase: UVMPhase): Unit = {}
+  def connectPhase(phase: UVMPhase): Unit = {}
+  def runPhase(phase: UVMPhase): Unit = {}
+  def extractPhase(phase: UVMPhase): Unit = {}
+  def checkPhase(phase: UVMPhase): Unit = {}
+  def reportPhase(phase: UVMPhase): Unit = {}
+  def finalPhase(phase: UVMPhase): Unit = {}
 }

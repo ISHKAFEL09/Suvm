@@ -23,10 +23,6 @@ private[chiseltester] class TreadleBackend[T <: Module](dut: T,
     case 1 => true
   }
 
-  def debugLog(str: => String): Unit = {
-    println(s"[DEBUG LOG] $str")
-  }
-
   def resolveName(signal: Data): String = {
     names.getOrElse(signal, signal.toString)
   }
@@ -60,13 +56,13 @@ private[chiseltester] class TreadleBackend[T <: Module](dut: T,
             }
           }
         }
-//        debugLog("clock step")
+        debugLog("clock step")
         runThreads(threads).foreach { case (clk, ts) =>
           blockedThreads.getOrElseUpdate(clk, mutable.ListBuffer.empty[TesterThread]) ++= ts
         }
         zombieThreads.foreach { i =>
           if (i.thread.isAlive) {
-            println(s"thread killed: ${i.name}")
+            debugLog(s"thread killed: ${i.name}")
             i.thread.interrupt()
           }
         }

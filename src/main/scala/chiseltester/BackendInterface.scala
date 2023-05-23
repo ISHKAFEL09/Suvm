@@ -2,6 +2,12 @@ package chiseltester
 
 import chisel3._
 
+trait AbstractEvent {
+  def trigger(): Unit
+
+  def isTriggered: Boolean
+}
+
 trait AbstractTesterThread {
   def thread: Thread
 

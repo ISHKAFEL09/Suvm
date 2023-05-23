@@ -6,6 +6,13 @@ import scala.annotation.tailrec
 import scala.util.DynamicVariable
 
 package object chiseltester {
+  var verbosity = true
+
+  def debugLog(str: => String): Unit = {
+    if (verbosity)
+      println(s"[DEBUG LOG] $str")
+  }
+
   object Context {
     case class Instance(backend: BackendInterface, env: TestEnvInterface)
 
@@ -76,11 +83,17 @@ package object chiseltester {
     fork()(run1).fork()(run2).join()
   }
 
-  def ->[T <: Module](condition: => Boolean): Unit = {
+  def ~>(condition: => Boolean): Unit = {
     Context().backend.doWait(condition)
   }
 
-  def ->[T <: Module](cycles: Int): Unit = {
+  def ~>(cycles: Int): Unit = {
     Context().backend.doWait(cycles)
+  }
+
+  def ~>(event: Event): Unit = {
+    ~>(event.isTriggered)
+    debugLog(s"event ${event.name} triggered")
+    ~>(0)
   }
 }

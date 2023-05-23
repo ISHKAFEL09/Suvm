@@ -42,29 +42,29 @@ class TLBTest extends AnyFlatSpec with ChiselTester with Matchers {
       val a = fork("a") {
         while (cnt > -10) {
           cnt -= 1
-          ->(1)
+          ~>(1)
         }
       }
 
       val b = fork("b") {
-        ->(cnt == 0)
+        ~>(cnt == 0)
         println(s"wait done!$cnt")
       }
 
       val e = fork("e") {
-        ->(cnt == -3)
+        ~>(cnt == -3)
         println(s"wait done!$cnt")
       }
 
       val g = fork("g") {
         fork("tmp0") {
-          ->(cnt == -4)
+          ~>(cnt == -4)
         }
 
         fork("tmp1") {
           while (true) {
             println("fork g:", cnt)
-            ->(1)
+            ~>(1)
           }
         }
       }
@@ -73,8 +73,35 @@ class TLBTest extends AnyFlatSpec with ChiselTester with Matchers {
       d.joinAny()
       d.kill()
       g.kill()
-      ->(3)
+      ~>(3)
       println(a.done, b.done, d.done, e.done, g.done)
+    }
+  }
+
+  it should "pass event test" in {
+
+    implicit val p: Parameters = Parameters((site, here, up) => {
+      case CoreKey => SimpleCoreParams
+      case CacheKey => SimpleCacheParams
+      case TLBEntries => 32
+    })
+
+    test(new TLB()) { c =>
+      val event = Event("tlbEvent")
+
+      val a = fork("trig") {
+        ~>(20)
+        event.trigger()
+        ~>(10)
+        event.trigger()
+      }
+
+      val b = fork("wait trig") {
+        ~>(event)
+        ~>(event)
+      }
+
+      (a ++ b).join()
     }
   }
 }

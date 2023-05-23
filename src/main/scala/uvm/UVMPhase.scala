@@ -3,6 +3,7 @@ package uvm
 import chiseltester._
 import ENUM_PHASE_TYPE._
 import ENUM_PHASE_STATE._
+import uvm.UVMPhase.mExecutionPhases
 
 class UVMPhase(name: String = "uvmPhase",
                phaseType: uvmPhaseType = UVM_PHASE_SCHEDULE,
@@ -19,6 +20,9 @@ class UVMPhase(name: String = "uvmPhase",
       UVM_PHASE_UNINITIALIZED
 
   private val mParent: Option[UVMPhase] = parent
+
+  private var mPhaseProc: Option[TesterThreadList] = None
+  private var phaseDone: Option[UVMObjection] = None
 
   // TODO: cmd line args
 
@@ -62,24 +66,64 @@ class UVMPhase(name: String = "uvmPhase",
 
   def execTask(comp: UVMComponent, phase: UVMPhase): Unit = {}
 
-  def executePhase(): Unit = {
+  def getObjection: Option[UVMObjection] = {
+    if (mPhaseType != UVM_PHASE_NODE || mImp.isEmpty)
+      None
+    else if (phaseDone.isEmpty) {
+      phaseDone = Some(create(s"${getName}_objection") { s =>
+        new UVMObjection(s)
+      })
+      phaseDone
+    } else
+      phaseDone
+  }
 
+  def executePhase(): Unit = {
+    mPhaseType match {
+      case UVM_PHASE_NODE =>
+        mState = UVM_PHASE_STARTED
+        mImp.get.traverse(top, this, UVM_PHASE_STARTED)
+        ~>(0)
+        mImp.get match {
+          case taskPhase: UVMTaskPhase =>
+            mExecutionPhases += this
+            mState = UVM_PHASE_EXECUTING
+            mPhaseProc = Some(fork(s"phase_${getName}_executing") {
+              taskPhase.traverse(top, this, UVM_PHASE_EXECUTING)
+              ~>(false)
+            })
+            ~>(0)
+          case _ =>
+            mState = UVM_PHASE_EXECUTING
+            ~>(0)
+            mImp.get.traverse(top, this, UVM_PHASE_EXECUTING)
+        }
+      case _ =>
+        mState = UVM_PHASE_STARTED
+        ~>(0)
+        mState = UVM_PHASE_EXECUTING
+    }
   }
 }
 
 object UVMPhase {
   private val mPhaseHopper = collection.mutable.Queue.empty[UVMPhase]
+  private val mExecutionPhases = collection.mutable.Queue.empty[UVMPhase]
 
   def mRunPhases(): Unit = {
     mPhaseHopper += UVMDomain.getCommonDomain
 
+    @annotation.tailrec
     def phaseLoop(): Unit = {
-      -> (mPhaseHopper.nonEmpty)
+      ~> (mPhaseHopper.nonEmpty)
       val phase = mPhaseHopper.dequeue()
       fork(s"phase_${phase.getName}") {
         phase.executePhase()
       }
-      -> (0)
+      ~> (0)
+      phaseLoop()
     }
+
+    phaseLoop()
   }
 }

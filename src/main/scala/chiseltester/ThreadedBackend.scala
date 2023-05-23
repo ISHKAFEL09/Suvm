@@ -6,12 +6,25 @@ import java.util.concurrent.{ConcurrentLinkedQueue, Semaphore}
 import scala.collection._
 import scala.collection.mutable.{ArrayBuffer, ListBuffer}
 
-private[chiseltester] class TesterThreadList(elements: Seq[AbstractTesterThread]) {
+case class Event(name: String = "Event") extends AbstractEvent {
+  private var mTrig = false
+
+  override def trigger(): Unit = {
+    mTrig = true
+    debugLog(s"trigger event $name")
+    ~>(0)
+    mTrig = false
+  }
+
+  override def isTriggered: Boolean = mTrig
+}
+
+class TesterThreadList(elements: Seq[AbstractTesterThread]) {
   def toSeq: Seq[AbstractTesterThread] = elements
 
-  def join(): Unit = ->(done)
+  def join(): Unit = ~>(done)
 
-  def joinAny(): Unit = ->(elements.exists(_.isDone))
+  def joinAny(): Unit = ~>(elements.exists(_.isDone))
 
   def ++(others: TesterThreadList): TesterThreadList = {
     new TesterThreadList(elements ++ others.toSeq)
@@ -23,7 +36,7 @@ private[chiseltester] class TesterThreadList(elements: Seq[AbstractTesterThread]
 
   def kill(): Unit = {
     elements.foreach(_.kill())
-    ->(done)
+    ~>(done)
   }
 
   def done: Boolean = elements.forall(_.isDone)
@@ -54,7 +67,7 @@ private[chiseltester] trait ThreadedBackend {
         runnable()
         clear()
         scheduler()
-        println(s"thread done: $name")
+        debugLog(s"thread done: $name")
       } catch {
         case _: InterruptedException =>
         case e@(_: Exception | _: Error) =>
@@ -62,7 +75,7 @@ private[chiseltester] trait ThreadedBackend {
           scheduler()
       }
     })
-    println(s"thread created: $name")
+    debugLog(s"thread created: $name")
 
     def isDone: Boolean = {
       done && children.forall(_.isDone)
