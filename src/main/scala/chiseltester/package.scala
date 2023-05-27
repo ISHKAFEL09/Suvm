@@ -98,4 +98,5 @@ package object chiseltester {
   }
 
   object TestFinishedException extends Exception("Test Finished!")
+  def finish(): Unit = throw TestFinishedException
 }

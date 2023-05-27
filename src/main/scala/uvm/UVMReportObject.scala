@@ -1,6 +1,7 @@
 package uvm
 
 import ENUM_UVM_VERBOSITY._
+import chiseltester._
 
 class UVMReportObject(name: String = "") extends UVMObject(name) {
   protected lazy val mReportHandler: UVMReportHandler = create(getName) { s => new UVMReportHandler(s) }
@@ -74,6 +75,7 @@ class UVMReportObject(name: String = "") extends UVMObject(name) {
                      contextName: String = "",
                      reportEnabledChecked: Boolean = false): Unit = {
     uvmReport(UVM_FATAL, idx, msg, verbosity, trace, contextName, reportEnabledChecked)
+    finish()
   }
 
   def uvmProcessReportMessage(reportMessage: UVMReportMessage): Unit = {

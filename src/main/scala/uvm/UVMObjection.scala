@@ -35,7 +35,6 @@ class UVMObjection(name: String = "") extends UVMReportObject(name) {
                      description: String,
                      count: Int = 1): Unit = {
     require(count > 0)
-    println("raise", obj.getInstID, obj)
 
     mTotalCount.update(obj, mTotalCount.getOrElse(obj, 0) + count)
 

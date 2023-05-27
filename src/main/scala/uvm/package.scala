@@ -11,8 +11,6 @@ package object uvm {
   private[uvm] def uvmInit(cs: Option[UVMCoreService] = None): Unit = {
     // TODO:
     UVMCoreService.set(new UVMDefaultCoreService)
-    val top = UVMRoot()
-    uvmFatal("Init", "this it uvmInit")
   }
 
   implicit class classOps[T](c: Class[T]) {
@@ -170,6 +168,6 @@ package object uvm {
     ~>(0)
     ~>(top.mPhaseAllDone)
     runner.kill()
-    throw TestFinishedException
+    finish()
   }
 }

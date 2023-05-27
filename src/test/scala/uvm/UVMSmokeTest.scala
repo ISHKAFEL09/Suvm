@@ -78,39 +78,46 @@ class UVMSmokeTest extends AnyFlatSpec with ChiselTester with Matchers {
     })
 
     test(new TLB()) { c =>
-      class Component(name: String) extends UVMTest(name, None) {
-        class Component1(name: String, parent: UVMComponent) extends UVMComponent(name, Some(parent)) {
-          override def runPhase(phase: UVMPhase): Unit = {
-            phase.raiseObjection(this)
-            uvmInfo(getFullName, "test phase begin", UVM_NONE)
-            ~>(20)
-            uvmInfo(getFullName, "test phase done", UVM_NONE)
-            phase.dropObjection(this)
-          }
-        }
-
-        class Component2(name: String, parent: UVMComponent) extends UVMComponent(name, Some(parent)) {
-          override def runPhase(phase: UVMPhase): Unit = {
-            phase.raiseObjection(this)
-            uvmInfo(getFullName, "test phase2 begin", UVM_NONE)
-            ~>(30)
-            uvmInfo(getFullName, "test phase2 done", UVM_NONE)
-            phase.dropObjection(this)
-          }
-        }
-
-        val comp1 = create("comp1", this) { case (s, p) =>
-          new Component1(s, p)
-        }
-        val comp2 = create("", comp1) { case (s, p) =>
-          new Component1(s, p)
-        }
-        val comp3 = create("comp3", this) { case (s, p) =>
-          new Component2(s, p)
+      class Driver(name: String, parent: UVMComponent) extends UVMComponent(name, Some(parent)) {
+        override def runPhase(phase: UVMPhase): Unit = {
+          phase.raiseObjection(this)
+          uvmInfo(getFullName, "test phase begin", UVM_NONE)
+          ~>(20)
+          uvmInfo(getFullName, "test phase done", UVM_NONE)
+          phase.dropObjection(this)
         }
       }
-      uvmRunTest{ case (s, p) =>
-        new Component(s)
+
+      class Monitor(name: String, parent: UVMComponent) extends UVMComponent(name, Some(parent)) {
+        override def runPhase(phase: UVMPhase): Unit = {
+          phase.raiseObjection(this)
+          uvmInfo(getFullName, "test phase2 begin", UVM_NONE)
+          ~>(30)
+          uvmInfo(getFullName, "test phase2 done", UVM_NONE)
+          phase.dropObjection(this)
+        }
+      }
+
+      class Agent(name: String, parent: UVMComponent) extends UVMComponent(name, Some(parent)) {
+        var driver: Option[Driver] = None
+        var monitor: Option[Monitor] = None
+
+        override def buildPhase(phase: UVMPhase): Unit = {
+          driver = Some(create("driver", this) { case (s, p) => new Driver(s, p) })
+          monitor = Some(create("monitor", this) { case (s, p) => new Monitor(s, p) })
+        }
+      }
+
+      class UVMPhaseTest(name: String) extends UVMTest(name, None) {
+        var agent: Option[Agent] = None
+
+        override def buildPhase(phase: UVMPhase): Unit = {
+          agent = Some(create("agent", this) { case (s, p) => new Agent(s, p) })
+        }
+      }
+
+      uvmRunTest{ case (s, _) =>
+        new UVMPhaseTest(s)
       }
     }
   }

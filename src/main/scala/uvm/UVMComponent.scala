@@ -3,8 +3,8 @@ package uvm
 abstract class UVMComponent(name: String, parent: Option[UVMComponent] = None) extends UVMReportObject(name) {
   private var mName: String = ""
   private var mParent: Option[UVMComponent] = None
-  private var mChildren = collection.mutable.ListBuffer.empty[UVMComponent]
-  private var mChildrenByName = collection.mutable.HashMap.empty[String, UVMComponent]
+  private val mChildren = collection.mutable.ListBuffer.empty[UVMComponent]
+  private val mChildrenByName = collection.mutable.HashMap.empty[String, UVMComponent]
 
   if (parent.isEmpty && name == "__top__") { // this is uvmRoot
     setName("")
@@ -51,10 +51,10 @@ abstract class UVMComponent(name: String, parent: Option[UVMComponent] = None) e
 
   private def mAddChild(child: UVMComponent): Boolean = {
     if (mChildrenByName.contains(child.getName) && mChildrenByName(child.getName) != child) {
-      uvmWarning("BDCLD", s"A child with the name ${child.getName} already exists.")
+      uvmWarning("BDCLD", s"A child with the name \"${child.getName}\" already exists.")
       false
     } else if (mChildren.contains(child)) {
-      uvmWarning("BDCHID", s"A child with the name ${child.getName} already exists.")
+      uvmWarning("BDCHID", s"A child with the name \"${child.getName}\" already exists.")
       false
     } else {
       mChildren += child
