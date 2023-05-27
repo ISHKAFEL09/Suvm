@@ -56,7 +56,7 @@ private[chiseltester] class TreadleBackend[T <: Module](dut: T,
             }
           }
         }
-        debugLog("clock step")
+        debugLog(s"clock ${getClockCycle(dut.clock)}")
         runThreads(threads).foreach { case (clk, ts) =>
           blockedThreads.getOrElseUpdate(clk, mutable.ListBuffer.empty[TesterThread]) ++= ts
         }

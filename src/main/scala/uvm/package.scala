@@ -1,5 +1,6 @@
 import scala.language.implicitConversions
 import scala.reflect.ClassTag
+import chiseltester._
 
 package object uvm {
   // private, for uvm
@@ -124,6 +125,14 @@ package object uvm {
 
   type uvmPhaseState = ENUM_PHASE_STATE.Value
 
+  object ENUM_OBJECTION_EVENT extends Enumeration {
+    val UVM_RAISED = Value
+    val UVM_DROPPED = Value
+    val UVM_ALL_DROPPED = Value
+  }
+
+  type uvmObjectionEvent = ENUM_OBJECTION_EVENT.Value
+
   def create[T <: UVMObject : ClassTag](name: String)(f: String => T): T = {
     val objName = implicitly[ClassTag[T]].runtimeClass.getPureName
     val factory = UVMCoreService().getFactory
@@ -151,5 +160,16 @@ package object uvm {
         factory.register(w)
         factory.createComponentByType(w, name, Some(parent))
     }
+  }
+
+  def uvmRunTest[T <: UVMTest : ClassTag](tc: (String, UVMComponent) => T): Unit = {
+    val uvmTestTop = create("uvmTestTop", top) { case (s, p) => tc(s, p) }
+    val runner = fork(s"${uvmTestTop.getName}") {
+      UVMPhase.mRunPhases()
+    }
+    ~>(0)
+    ~>(top.mPhaseAllDone)
+    runner.kill()
+    throw TestFinishedException
   }
 }

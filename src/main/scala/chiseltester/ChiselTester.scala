@@ -30,6 +30,11 @@ trait ChiselTester extends Assertions with TestSuiteMixin with TestEnvInterface 
 
   def test[T <: Module](dutGen: => T)(testFn: T => Unit): Unit = {
     val tester = Context.createDefaultTester(() => dutGen, addDefaultAnnos)
-    Context.run(tester, this, testFn)
+    try {
+      Context.run(tester, this, testFn)
+    } catch {
+      case TestFinishedException => println("Test Finished!")
+      case e@(_: Exception | _: Error) => throw e
+    }
   }
 }

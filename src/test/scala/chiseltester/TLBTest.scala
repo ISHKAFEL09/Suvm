@@ -9,6 +9,7 @@ import org.scalatest.matchers.should.Matchers
 import treadle.WriteVcdAnnotation
 import rocket2.config._
 import rocket2._
+import uvm._
 
 class TLBTest extends AnyFlatSpec with ChiselTester with Matchers {
   behavior of "ChiselTester"

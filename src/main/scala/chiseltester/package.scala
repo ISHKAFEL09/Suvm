@@ -96,4 +96,6 @@ package object chiseltester {
     debugLog(s"event ${event.name} triggered")
     ~>(0)
   }
+
+  object TestFinishedException extends Exception("Test Finished!")
 }

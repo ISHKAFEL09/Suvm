@@ -3,7 +3,7 @@ package uvm
 import chiseltester._
 import ENUM_PHASE_TYPE._
 import ENUM_PHASE_STATE._
-import uvm.UVMPhase.mExecutionPhases
+import uvm.UVMPhase.{mExecutionPhases, mPhaseHopper}
 
 class UVMPhase(name: String = "uvmPhase",
                phaseType: uvmPhaseType = UVM_PHASE_SCHEDULE,
@@ -78,12 +78,21 @@ class UVMPhase(name: String = "uvmPhase",
       phaseDone
   }
 
+  def raiseObjection(obj: UVMObject, description: String = "", count: Int = 1): Unit = {
+    getObjection.foreach(_.raiseObjection(Some(obj), description, count))
+  }
+
+  def dropObjection(obj: UVMObject, description: String = "", count: Int = 1): Unit = {
+    getObjection.foreach(_.dropObjection(Some(obj), description, count))
+  }
+
   def executePhase(): Unit = {
     mPhaseType match {
       case UVM_PHASE_NODE =>
         mState = UVM_PHASE_STARTED
         mImp.get.traverse(top, this, UVM_PHASE_STARTED)
         ~>(0)
+
         mImp.get match {
           case taskPhase: UVMTaskPhase =>
             mExecutionPhases += this
@@ -93,15 +102,43 @@ class UVMPhase(name: String = "uvmPhase",
               ~>(false)
             })
             ~>(0)
+            if (getObjection.nonEmpty && getObjection.get.getObjectionTotal() != 0)
+              getObjection.get.waitFor(ENUM_OBJECTION_EVENT.UVM_ALL_DROPPED, Some(top))
+
           case _ =>
             mState = UVM_PHASE_EXECUTING
             ~>(0)
             mImp.get.traverse(top, this, UVM_PHASE_EXECUTING)
         }
+
       case _ =>
         mState = UVM_PHASE_STARTED
         ~>(0)
         mState = UVM_PHASE_EXECUTING
+    }
+
+    mExecutionPhases -= this
+    mState = UVM_PHASE_ENDED
+    mImp.foreach(_.traverse(top, this, UVM_PHASE_ENDED))
+    ~>(0)
+
+    mPhaseProc.foreach(_.kill())
+    mPhaseProc = None
+    ~>(0)
+
+    // TODO:
+//    getObjection.clear()
+    mState = UVM_PHASE_DONE
+    ~>(0)
+
+    if (mSuccessors.isEmpty)
+      top.mPhaseAllDone = true
+    else {
+      mSuccessors.foreach { i =>
+        i.mState = UVM_PHASE_SCHEDULED
+        ~>(0)
+        mPhaseHopper += i
+      }
     }
   }
 }
