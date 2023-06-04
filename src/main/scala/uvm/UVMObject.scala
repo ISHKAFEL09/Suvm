@@ -20,6 +20,8 @@ abstract class UVMObject(val name: String) extends UVMVoid {
 
   def getFullName: String = getName
 
+  def getTypeName: String = getClass.getPureName
+
   def getInstID: Int = mInstID
 
   override def toString: String = getFullName

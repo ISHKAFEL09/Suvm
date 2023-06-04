@@ -84,6 +84,7 @@ class UVMSmokeTest extends AnyFlatSpec with ChiselTester with Matchers {
           uvmInfo(getFullName, "test phase begin", UVM_NONE)
           ~>(20)
           uvmInfo(getFullName, "test phase done", UVM_NONE)
+          uvmFatal(getTypeName, "fatal test")
           phase.dropObjection(this)
         }
       }
