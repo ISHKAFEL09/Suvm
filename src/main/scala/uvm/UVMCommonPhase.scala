@@ -14,6 +14,7 @@ abstract class UVMTopDownPhase(name: String) extends UVMPhase(name, UVM_PHASE_IM
       case UVM_PHASE_READY_TO_END =>
       // TODO:
       case UVM_PHASE_ENDED =>
+        comp.phaseEnded(phase)
       // TODO:
       case _ =>
         uvmFatal("PH_BADEXEC","topdown phase traverse internal error")
@@ -37,6 +38,7 @@ abstract class UVMBottomUpPhase(name: String) extends UVMPhase(name, UVM_PHASE_I
       case UVM_PHASE_READY_TO_END =>
       // TODO:
       case UVM_PHASE_ENDED =>
+        comp.phaseEnded(phase)
       // TODO:
       case _ =>
         uvmFatal("PH_BADEXEC","topdown phase traverse internal error")

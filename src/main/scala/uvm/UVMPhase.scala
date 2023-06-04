@@ -141,6 +141,8 @@ class UVMPhase(name: String = "uvmPhase",
       }
     }
   }
+
+  def getState: uvmPhaseState = mState
 }
 
 object UVMPhase {

@@ -63,6 +63,13 @@ abstract class UVMComponent(name: String, parent: Option[UVMComponent] = None) e
     }
   }
 
+  def resolveBindings(): Unit = {}
+
+  def doResolveBindings(): Unit = {
+    mChildren.foreach(_.doResolveBindings())
+    resolveBindings()
+  }
+
   def buildPhase(phase: UVMPhase): Unit = {}
   def connectPhase(phase: UVMPhase): Unit = {}
   def runPhase(phase: UVMPhase): Unit = {}
@@ -70,4 +77,6 @@ abstract class UVMComponent(name: String, parent: Option[UVMComponent] = None) e
   def checkPhase(phase: UVMPhase): Unit = {}
   def reportPhase(phase: UVMPhase): Unit = {}
   def finalPhase(phase: UVMPhase): Unit = {}
+  def phaseStarted(phase: UVMPhase): Unit = {}
+  def phaseEnded(phase: UVMPhase): Unit = {}
 }

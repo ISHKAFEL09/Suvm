@@ -79,17 +79,24 @@ class UVMSmokeTest extends AnyFlatSpec with ChiselTester with Matchers {
 
     test(new TLB()) { c =>
       class Driver(name: String, parent: UVMComponent) extends UVMComponent(name, Some(parent)) {
+        val ap = new UVMAnalysisPort[String]("ap", Some(this))
+
         override def runPhase(phase: UVMPhase): Unit = {
           phase.raiseObjection(this)
           uvmInfo(getFullName, "test phase begin", UVM_NONE)
-          ~>(20)
+          0 to 20 foreach { i =>
+            ap.write(s"driver send $i")
+            ~>(1)
+          }
           uvmInfo(getFullName, "test phase done", UVM_NONE)
-          uvmFatal(getTypeName, "fatal test")
+//          uvmFatal(getTypeName, "fatal test")
           phase.dropObjection(this)
         }
       }
 
       class Monitor(name: String, parent: UVMComponent) extends UVMComponent(name, Some(parent)) {
+        val imp = new UVMAnalysisImp[String]("imp", write)
+
         override def runPhase(phase: UVMPhase): Unit = {
           phase.raiseObjection(this)
           uvmInfo(getFullName, "test phase2 begin", UVM_NONE)
@@ -97,6 +104,9 @@ class UVMSmokeTest extends AnyFlatSpec with ChiselTester with Matchers {
           uvmInfo(getFullName, "test phase2 done", UVM_NONE)
           phase.dropObjection(this)
         }
+
+        def write(s: String): Unit =
+          uvmInfo(getTypeName, s, UVM_NONE)
       }
 
       class Agent(name: String, parent: UVMComponent) extends UVMComponent(name, Some(parent)) {
@@ -107,6 +117,9 @@ class UVMSmokeTest extends AnyFlatSpec with ChiselTester with Matchers {
           driver = Some(create("driver", this) { case (s, p) => new Driver(s, p) })
           monitor = Some(create("monitor", this) { case (s, p) => new Monitor(s, p) })
         }
+
+        override def connectPhase(phase: UVMPhase): Unit =
+          driver.get.ap.connect(monitor.get.imp)
 
         override def runPhase(phase: UVMPhase): Unit = {
           while (true) {

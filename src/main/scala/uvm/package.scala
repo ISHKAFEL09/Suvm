@@ -131,6 +131,14 @@ package object uvm {
 
   type uvmObjectionEvent = ENUM_OBJECTION_EVENT.Value
 
+  object ENUM_PORT_TYPE extends Enumeration {
+    val UVM_PORT = Value
+    val UVM_EXPORT = Value
+    val UVM_IMPLEMENTATION = Value
+  }
+
+  type uvmPortType = ENUM_PORT_TYPE.Value
+
   def create[T <: UVMObject : ClassTag](name: String)(f: String => T): T = {
     val objName = implicitly[ClassTag[T]].runtimeClass.getPureName
     val factory = UVMCoreService().getFactory

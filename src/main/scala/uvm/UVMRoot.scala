@@ -8,6 +8,12 @@ class UVMRoot extends UVMComponent("__top__") {
   override val _traceLevel: Int = 4
 
   var mPhaseAllDone = false
+
+  override def phaseEnded(phase: UVMPhase): Unit = {
+    if (phase.toString == "connect") {
+      doResolveBindings()
+    }
+  }
 }
 
 object UVMRoot {
