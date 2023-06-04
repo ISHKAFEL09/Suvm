@@ -168,6 +168,6 @@ package object uvm {
     ~>(0)
     ~>(top.mPhaseAllDone)
     runner.kill()
-    finish()
+    finish(false)
   }
 }

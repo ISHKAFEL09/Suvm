@@ -106,6 +106,13 @@ class UVMSmokeTest extends AnyFlatSpec with ChiselTester with Matchers {
           driver = Some(create("driver", this) { case (s, p) => new Driver(s, p) })
           monitor = Some(create("monitor", this) { case (s, p) => new Monitor(s, p) })
         }
+
+        override def runPhase(phase: UVMPhase): Unit = {
+          while (true) {
+            ~>(1)
+            println("infinite loop test")
+          }
+        }
       }
 
       class UVMPhaseTest(name: String) extends UVMTest(name, None) {
@@ -116,7 +123,7 @@ class UVMSmokeTest extends AnyFlatSpec with ChiselTester with Matchers {
         }
       }
 
-      uvmRunTest{ case (s, _) =>
+      uvmRunTest { case (s, _) =>
         new UVMPhaseTest(s)
       }
     }

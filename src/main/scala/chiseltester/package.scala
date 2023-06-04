@@ -98,5 +98,10 @@ package object chiseltester {
   }
 
   object TestFinishedException extends Exception("Test Finished!")
-  def finish(): Unit = throw TestFinishedException
+  def finish(trace: Boolean = true): Unit = {
+    if (trace) {
+      println(s"finish() called in ${new Throwable().getStackTrace()(1).toString}")
+    }
+    throw TestFinishedException
+  }
 }
