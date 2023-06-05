@@ -90,6 +90,8 @@ class TLBTest extends AnyFlatSpec with ChiselTester with Matchers {
     test(new TLB()) { c =>
       val event = Event("tlbEvent")
 
+      println(s"current thread name: ${current.get.name}")
+
       val a = fork("trig") {
         ~>(20)
         event.trigger()
@@ -99,6 +101,7 @@ class TLBTest extends AnyFlatSpec with ChiselTester with Matchers {
       }
 
       val b = fork("wait trig") {
+        println(s"current thread name: ${current.get.name}")
         ~>(event)
         ~>(event)
       }

@@ -14,11 +14,11 @@ package object chiseltester {
   }
 
   object Context {
-    case class Instance(backend: BackendInterface with ThreadedBackend, env: TestEnvInterface)
+    case class Instance(backend: BackendInterface, env: TestEnvInterface)
 
     private val context = new DynamicVariable[Option[Instance]](None)
 
-    def run[T <: Module](backend: BackendInstance[T] with ThreadedBackend,
+    def run[T <: Module](backend: BackendInstance[T],
                          env: TestEnvInterface,
                          testFn: T => Unit): Unit = {
       require(context.value.isEmpty)

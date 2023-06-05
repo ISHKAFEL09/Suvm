@@ -18,7 +18,7 @@ trait AbstractTesterThread {
   def name: String
 }
 
-trait BackendInterface {
+trait BackendInterface extends ThreadedBackend {
   def pokeBits(signal: Bits, value: BigInt): Unit
 
   def peekBits(signal: Bits, stale: Boolean): BigInt
