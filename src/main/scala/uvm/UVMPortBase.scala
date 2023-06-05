@@ -1,7 +1,6 @@
 package uvm
 
 import chiseltester.finish
-import uvm.tlm.UVMTlmIfBase
 
 
 abstract class UVMPortComponentBase(name: String, parent: Option[UVMComponent]) extends UVMComponent(name, parent) {

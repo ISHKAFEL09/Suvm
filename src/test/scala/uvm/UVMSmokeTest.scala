@@ -131,10 +131,17 @@ class UVMSmokeTest extends AnyFlatSpec with ChiselTester with Matchers {
 
       class UVMPhaseTest(name: String) extends UVMTest(name, None) {
         var agent: Option[Agent] = None
+        val imp = new UVMAnalysisImp[String]("agentImp", writeAgent)
 
         override def buildPhase(phase: UVMPhase): Unit = {
           agent = Some(create("agent", this) { case (s, p) => new Agent(s, p) })
         }
+
+        override def connectPhase(phase: UVMPhase): Unit =
+          agent.get.driver.get.ap.connect(imp)
+
+        def writeAgent(s: String): Unit =
+          uvmInfo(getTypeName, s, UVM_NONE)
       }
 
       uvmRunTest { case (s, _) =>

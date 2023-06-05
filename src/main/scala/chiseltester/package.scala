@@ -14,11 +14,11 @@ package object chiseltester {
   }
 
   object Context {
-    case class Instance(backend: BackendInterface, env: TestEnvInterface)
+    case class Instance(backend: BackendInterface with ThreadedBackend, env: TestEnvInterface)
 
     private val context = new DynamicVariable[Option[Instance]](None)
 
-    def run[T <: Module](backend: BackendInstance[T],
+    def run[T <: Module](backend: BackendInstance[T] with ThreadedBackend,
                          env: TestEnvInterface,
                          testFn: T => Unit): Unit = {
       require(context.value.isEmpty)
@@ -96,6 +96,8 @@ package object chiseltester {
     debugLog(s"event ${event.name} triggered")
     ~>(0)
   }
+
+  def current: Option[AbstractTesterThread] = Context().backend.current
 
   object TestFinishedException extends Exception("Test Finished!")
   def finish(trace: Boolean = true): Unit = {

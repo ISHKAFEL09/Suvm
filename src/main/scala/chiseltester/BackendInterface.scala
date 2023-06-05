@@ -14,6 +14,8 @@ trait AbstractTesterThread {
   def isDone: Boolean
 
   def kill(): Unit
+
+  def name: String
 }
 
 trait BackendInterface {

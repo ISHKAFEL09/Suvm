@@ -1,4 +1,4 @@
-package uvm.tlm
+package uvm
 
 trait UVMTlmIfBase[T1] {
   def write(t: T1): Unit

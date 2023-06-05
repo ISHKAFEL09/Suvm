@@ -1,7 +1,5 @@
 package uvm
 
-import tlm._
-
 class UVMAnalysisPort[T](name: String, parent: Option[UVMComponent])
   extends UVMPortBase[T](name, parent, ENUM_PORT_TYPE.UVM_PORT)
     with UVMTlmIfBase[T] {

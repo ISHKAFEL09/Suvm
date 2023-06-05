@@ -93,6 +93,7 @@ class TLBTest extends AnyFlatSpec with ChiselTester with Matchers {
       val a = fork("trig") {
         ~>(20)
         event.trigger()
+        println(s"current thread name: ${current.get.name}")
         ~>(10)
         event.trigger()
       }
