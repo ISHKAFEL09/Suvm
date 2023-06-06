@@ -15,8 +15,8 @@ case class UVMSequenceReq(grant: Boolean,
                           request: ENUM_SEQ_REQ.Value,
                           seq: UVMSequenceBase)
 
-class UVMSequencerBase(name: String, parent: Option[UVMComponent]) extends UVMComponent(name, parent) {
-  private val mSequencerID: Int = {
+abstract class UVMSequencerBase(name: String, parent: Option[UVMComponent]) extends UVMComponent(name, parent) {
+  protected val mSequencerID: Int = {
     UVMSequencerBase.sequencerID += 1
     UVMSequencerBase.sequencerID
   }
@@ -26,6 +26,9 @@ class UVMSequencerBase(name: String, parent: Option[UVMComponent]) extends UVMCo
   private val arbSequenceQueue = collection.mutable.ArrayBuffer.empty[UVMSequenceReq]
 
   private val arbCompleted = collection.mutable.Set.empty[Int]
+
+  protected var mWaitForItemSequenceID: Int = -1
+  protected var mWaitForItemTransactionID: Int = -1
 
   UVMSequencerBase.allSequencerInsts(mSequencerID) = this
 
@@ -50,7 +53,7 @@ class UVMSequencerBase(name: String, parent: Option[UVMComponent]) extends UVMCo
     else 0
   }
 
-  private def mSelectSequence(): Unit = {
+  protected def mSelectSequence(): Unit = {
     ~>(arbSequenceQueue.nonEmpty)
     mSetArb(arbSequenceQueue.remove(0).reqID)
   }
@@ -70,6 +73,18 @@ class UVMSequencerBase(name: String, parent: Option[UVMComponent]) extends UVMCo
 
     mWaitArb(UVMSequencerBase.requestID)
   }
+
+  def waitForItemDone(seq: UVMSequenceBase, tid: Int): Unit = {
+    val seqID = seq.mGetSqrSequenceID(mSequencerID, update = true)
+    mWaitForItemTransactionID = -1
+    mWaitForItemSequenceID = -1
+    if (tid == -1)
+      ~>(seqID == mWaitForItemSequenceID)
+    else
+      ~>(seqID == mWaitForItemSequenceID && mWaitForItemTransactionID == tid)
+  }
+
+  def sendRequest[REQ <: UVMSequenceItem](seq: UVMSequenceBase, t: REQ): Unit
 }
 
 object UVMSequencerBase {

@@ -4,6 +4,12 @@ trait UVMTlmIfBase[T1] {
   def write(t: T1): Unit
 }
 
+trait UVMTlmSeqBase[REQ, RSP] {
+  def getNextItem: REQ
+
+  def itemDone(rsp: Option[RSP]): Unit
+}
+
 trait UVMTlmIfExtend[T1, T2] {
   def put(t: T1): Unit
 

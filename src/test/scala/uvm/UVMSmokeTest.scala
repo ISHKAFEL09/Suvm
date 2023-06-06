@@ -78,15 +78,20 @@ class UVMSmokeTest extends AnyFlatSpec with ChiselTester with Matchers {
     })
 
     test(new TLB()) { c =>
+      val sqr = new UVMSequencer[UVMSequenceItem, UVMSequenceItem]("sqr", None)
+
       class Driver(name: String, parent: UVMComponent) extends UVMComponent(name, Some(parent)) {
         val ap = new UVMAnalysisPort[String]("ap", Some(this))
+        val seqItemPort = new UVMSeqItemPort[UVMSequenceItem, UVMSequenceItem]("seqItemPort", None)
 
         override def runPhase(phase: UVMPhase): Unit = {
           phase.raiseObjection(this)
           uvmInfo(getFullName, "test phase begin", UVM_NONE)
           0 to 20 foreach { i =>
-            ap.write(s"driver send $i")
+            val s = seqItemPort.getNextItem
+            ap.write(s"driver send $s")
             ~>(1)
+            seqItemPort.itemDone()
           }
           uvmInfo(getFullName, "test phase done", UVM_NONE)
 //          uvmFatal(getTypeName, "fatal test")
@@ -129,6 +134,16 @@ class UVMSmokeTest extends AnyFlatSpec with ChiselTester with Matchers {
         }
       }
 
+      class SequenceTest(name: String) extends UVMSequenceBase(name) {
+        override def body(): Unit = {
+          0 to 30 foreach { i =>
+            val item = new UVMSequenceItem(s"seq item: $i")
+            startItem(item)
+            finishItem(item)
+          }
+        }
+      }
+
       class UVMPhaseTest(name: String) extends UVMTest(name, None) {
         var agent: Option[Agent] = None
         val imp = new UVMAnalysisImp[String]("agentImp", writeAgent)
@@ -137,8 +152,15 @@ class UVMSmokeTest extends AnyFlatSpec with ChiselTester with Matchers {
           agent = Some(create("agent", this) { case (s, p) => new Agent(s, p) })
         }
 
-        override def connectPhase(phase: UVMPhase): Unit =
+        override def connectPhase(phase: UVMPhase): Unit = {
+          agent.get.driver.get.seqItemPort.connect(sqr.seqItemExport)
           agent.get.driver.get.ap.connect(imp)
+        }
+
+        override def runPhase(phase: UVMPhase): Unit = {
+          val s = new SequenceTest("s")
+          s.start(sqr)
+        }
 
         def writeAgent(s: String): Unit =
           uvmInfo(getTypeName, s, UVM_NONE)

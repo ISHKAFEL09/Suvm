@@ -20,7 +20,6 @@ abstract class UVMPortBase[IF](name: String,
                                portType: uvmPortType,
                                minSize: Int = 0,
                                maxSize: Int = 1) extends UVMPortComponentBase(name, parent) {
-  this: UVMTlmIfBase[IF] =>
 
   override type thisType = UVMPortBase[IF]
 
