@@ -1,10 +1,15 @@
 package uvm
 
+import agents.decouple._
+import chisel3._
+import chisel3.experimental.BundleLiterals._
 import chiseltester._
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import rocket2._
 import rocket2.config._
+
+import scala.util.Random
 
 class UVMSmokeTest extends AnyFlatSpec with ChiselTester with Matchers {
   behavior of "UVMTest"
@@ -78,66 +83,49 @@ class UVMSmokeTest extends AnyFlatSpec with ChiselTester with Matchers {
     })
 
     test(new TLB()) { c =>
-      val sqr = new UVMSequencer[UVMSequenceItem, UVMSequenceItem]("sqr", None)
+      implicit val clk: Clock = c.clock
 
-      class Driver(name: String, parent: UVMComponent) extends UVMComponent(name, Some(parent)) {
-        val ap = new UVMAnalysisPort[String]("ap", Some(this))
-        val seqItemPort = new UVMSeqItemPort[UVMSequenceItem, UVMSequenceItem]("seqItemPort", None)
+      case class TLBReqItem(asid: Int, vpn: Int, passthrough: Boolean, instruction: Boolean, store: Boolean)
 
-        override def runPhase(phase: UVMPhase): Unit = {
-          phase.raiseObjection(this)
-          uvmInfo(getFullName, "test phase begin", UVM_NONE)
-          0 to 20 foreach { i =>
-            val s = seqItemPort.getNextItem
-            ap.write(s"driver send $s")
-            ~>(1)
-            seqItemPort.itemDone()
-          }
-          uvmInfo(getFullName, "test phase done", UVM_NONE)
-//          uvmFatal(getTypeName, "fatal test")
-          phase.dropObjection(this)
-        }
+      val sqr = new UVMSequencer[DecoupleSeqItem[TLBReqItem], UVMSequenceItem]("sqr", None)
+
+      class TLBReqDriver(parent: UVMComponent) extends DecoupleDriver[TLBReqItem, TLBReq]("TLBReqDriver", Some(parent), c.io.req) {
+        override def driver(t: TLBReqItem): TLBReq = chiselTypeOf(bus.bits).Lit(
+          _.vpn -> t.vpn.U,
+          _.asid -> t.asid.U,
+          _.passthrough -> t.passthrough.B,
+          _.store -> t.store.B,
+          _.instruction -> t.instruction.B
+        )
       }
 
-      class Monitor(name: String, parent: UVMComponent) extends UVMComponent(name, Some(parent)) {
-        val imp = new UVMAnalysisImp[String]("imp", write)
+      class TLBReqMonitor(parent: UVMComponent) extends DecoupleMonitor[TLBReqItem, TLBReq]("TLBReqMonitor", Some(parent), c.io.req) {
+        override def monitor(): DecoupleSeqItem[TLBReqItem] = DecoupleSeqItem("monitor_item", TLBReqItem(
+          bus.bits.vpn.peek().litValue.toInt,
+          bus.bits.asid.peek().litValue.toInt,
+          bus.bits.passthrough.peek().litToBoolean,
+          bus.bits.instruction.peek().litToBoolean,
+          bus.bits.store.peek().litToBoolean
+        ))
 
-        override def runPhase(phase: UVMPhase): Unit = {
-          phase.raiseObjection(this)
-          uvmInfo(getFullName, "test phase2 begin", UVM_NONE)
-          ~>(30)
-          uvmInfo(getFullName, "test phase2 done", UVM_NONE)
-          phase.dropObjection(this)
-        }
-
-        def write(s: String): Unit =
-          uvmInfo(getTypeName, s, UVM_NONE)
+        override def write(t: DecoupleSeqItem[TLBReqItem]): Unit =
+          uvmInfo(getTypeName, s"monitor item: ${t.gen.asid}", UVM_NONE)
       }
 
       class Agent(name: String, parent: UVMComponent) extends UVMComponent(name, Some(parent)) {
-        var driver: Option[Driver] = None
-        var monitor: Option[Monitor] = None
+        var driver: Option[TLBReqDriver] = None
+        var monitor: Option[TLBReqMonitor] = None
 
         override def buildPhase(phase: UVMPhase): Unit = {
-          driver = Some(create("driver", this) { case (s, p) => new Driver(s, p) })
-          monitor = Some(create("monitor", this) { case (s, p) => new Monitor(s, p) })
-        }
-
-        override def connectPhase(phase: UVMPhase): Unit =
-          driver.get.ap.connect(monitor.get.imp)
-
-        override def runPhase(phase: UVMPhase): Unit = {
-          while (true) {
-            ~>(1)
-            println("infinite loop test")
-          }
+          driver = Some(create("driver", this) { case (s, p) => new TLBReqDriver(p) })
+          monitor = Some(create("monitor", this) { case (s, p) => new TLBReqMonitor(p) })
         }
       }
 
       class SequenceTest(name: String) extends UVMSequenceBase(name) {
         override def body(): Unit = {
           0 to 30 foreach { i =>
-            val item = new UVMSequenceItem(s"seq item: $i")
+            val item = DecoupleSeqItem(s"item $i", TLBReqItem(i, 0, true, true, true))
             startItem(item)
             finishItem(item)
           }
@@ -146,7 +134,6 @@ class UVMSmokeTest extends AnyFlatSpec with ChiselTester with Matchers {
 
       class UVMPhaseTest(name: String) extends UVMTest(name, None) {
         var agent: Option[Agent] = None
-        val imp = new UVMAnalysisImp[String]("agentImp", writeAgent)
 
         override def buildPhase(phase: UVMPhase): Unit = {
           agent = Some(create("agent", this) { case (s, p) => new Agent(s, p) })
@@ -154,16 +141,14 @@ class UVMSmokeTest extends AnyFlatSpec with ChiselTester with Matchers {
 
         override def connectPhase(phase: UVMPhase): Unit = {
           agent.get.driver.get.seqItemPort.connect(sqr.seqItemExport)
-          agent.get.driver.get.ap.connect(imp)
         }
 
         override def runPhase(phase: UVMPhase): Unit = {
+          phase.raiseObjection(phase)
           val s = new SequenceTest("s")
           s.start(sqr)
+          phase.dropObjection(phase)
         }
-
-        def writeAgent(s: String): Unit =
-          uvmInfo(getTypeName, s, UVM_NONE)
       }
 
       uvmRunTest { case (s, _) =>

@@ -42,7 +42,7 @@ object SimpleCoreParams extends CoreParams {
 
   override def pgLevels: Int = 2
 
-  override def asIdBits: Int = 0
+  override def asIdBits: Int = 1
 
   override def pgLevelBits: Int = 2
 
