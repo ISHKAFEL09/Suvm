@@ -24,6 +24,7 @@ abstract class DecoupleDriver[T, REQ <: Data](name: String,
         clk.step()
       bus.valid.poke(false.B)
       seqItemPort.itemDone()
+      uvmInfo(getTypeName, s"item: ${item.name} done", UVM_NONE)
     }
   }
 }

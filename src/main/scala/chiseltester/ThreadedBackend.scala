@@ -12,7 +12,7 @@ case class Event(name: String = "Event") extends AbstractEvent {
   override def trigger(): Unit = {
     mTrig = true
     debugLog(s"trigger event $name")
-    ~>(0)
+    ~>(1)
     mTrig = false
   }
 

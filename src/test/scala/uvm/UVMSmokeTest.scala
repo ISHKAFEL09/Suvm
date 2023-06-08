@@ -3,6 +3,7 @@ package uvm
 import agents.decouple._
 import chisel3._
 import chisel3.experimental.BundleLiterals._
+import chisel3.util._
 import chiseltester._
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
@@ -82,8 +83,29 @@ class UVMSmokeTest extends AnyFlatSpec with ChiselTester with Matchers {
       case TLBEntries => 32
     })
 
-    test(new TLB()) { c =>
-      implicit val clk: Clock = c.clock
+    class TLBWrapper() extends Module {
+      val clk = IO(Clock())
+
+      val dut = Module(new TLB())
+      val _io = dut.io
+
+      val io = IO(_io.cloneType)
+      _io <> io
+      dut.clock := clk
+
+      def setClock(n: Int, clk: Clock): Unit = {
+        val (_, flip) = Counter(true.B, n)
+        val r = RegInit(false.B)
+        when (flip) {
+          r := !r
+        }
+        clk := r.asClock
+      }
+      setClock(5, clk)
+    }
+
+    test(new TLBWrapper()) { c =>
+      implicit val clk: Clock = c.clk
 
       case class TLBReqItem(asid: Int, vpn: Int, passthrough: Boolean, instruction: Boolean, store: Boolean)
 
