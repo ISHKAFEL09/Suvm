@@ -1,6 +1,6 @@
 package uvm
 
-import chiseltester.finish
+import chiter._
 
 
 abstract class UVMPortComponentBase(name: String, parent: Option[UVMComponent]) extends UVMComponent(name, parent) {

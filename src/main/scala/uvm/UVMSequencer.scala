@@ -1,6 +1,6 @@
 package uvm
 
-import chiseltester._
+import chiter._
 
 class UVMSequencer[REQ <: UVMSequenceItem, RSP](name: String, parent: Option[UVMComponent])
   extends UVMSequencerBase(name, parent) with UVMTlmSeqBase[REQ, RSP] {
@@ -21,7 +21,7 @@ class UVMSequencer[REQ <: UVMSequenceItem, RSP](name: String, parent: Option[UVM
 
     sequenceItemRequested = true
     getNextItemCalled = true
-    ~>(reqQueue.nonEmpty)
+    uvmChiter.get.~>(reqQueue.nonEmpty)
     reqQueue.head
   }
 

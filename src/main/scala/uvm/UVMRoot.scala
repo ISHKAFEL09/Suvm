@@ -1,6 +1,6 @@
 package uvm
 
-import chiseltester._
+import chiter._
 
 import scala.reflect.ClassTag
 

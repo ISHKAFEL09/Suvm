@@ -4,15 +4,14 @@ import agents.decouple._
 import chisel3._
 import chisel3.experimental.BundleLiterals._
 import chisel3.util._
-import chiseltester._
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import rocket2._
 import rocket2.config._
+import chiter._
 
-import scala.util.Random
 
-class UVMSmokeTest extends AnyFlatSpec with ChiselTester with Matchers {
+class UVMSmokeTest extends AnyFlatSpec with Matchers {
   behavior of "UVMTest"
 
   it should "pass UVMObject test" in {
@@ -83,99 +82,103 @@ class UVMSmokeTest extends AnyFlatSpec with ChiselTester with Matchers {
       case TLBEntries => 32
     })
 
-    class TLBWrapper() extends Module {
-      val clk = IO(Clock())
-
-      val dut = Module(new TLB())
-      val _io = dut.io
-
-      val io = IO(_io.cloneType)
-      _io <> io
-      dut.clock := clk
-
-      def setClock(n: Int, clk: Clock): Unit = {
-        val (_, flip) = Counter(true.B, n)
-        val r = RegInit(false.B)
-        when (flip) {
-          r := !r
-        }
-        clk := r.asClock
-      }
-      setClock(5, clk)
-    }
-
-    test(new TLBWrapper()) { c =>
-      implicit val clk: Clock = c.clk
-
-      case class TLBReqItem(asid: Int, vpn: Int, passthrough: Boolean, instruction: Boolean, store: Boolean)
-
-      val sqr = new UVMSequencer[DecoupleSeqItem[TLBReqItem], UVMSequenceItem]("sqr", None)
-
-      class TLBReqDriver(parent: UVMComponent) extends DecoupleDriver[TLBReqItem, TLBReq]("TLBReqDriver", Some(parent), c.io.req) {
-        override def driver(t: TLBReqItem): TLBReq = chiselTypeOf(bus.bits).Lit(
-          _.vpn -> t.vpn.U,
-          _.asid -> t.asid.U,
-          _.passthrough -> t.passthrough.B,
-          _.store -> t.store.B,
-          _.instruction -> t.instruction.B
-        )
-      }
-
-      class TLBReqMonitor(parent: UVMComponent) extends DecoupleMonitor[TLBReqItem, TLBReq]("TLBReqMonitor", Some(parent), c.io.req) {
-        override def monitor(): DecoupleSeqItem[TLBReqItem] = DecoupleSeqItem("monitor_item", TLBReqItem(
-          bus.bits.vpn.peek().litValue.toInt,
-          bus.bits.asid.peek().litValue.toInt,
-          bus.bits.passthrough.peek().litToBoolean,
-          bus.bits.instruction.peek().litToBoolean,
-          bus.bits.store.peek().litToBoolean
-        ))
-
-        override def write(t: DecoupleSeqItem[TLBReqItem]): Unit =
-          uvmInfo(getTypeName, s"monitor item: ${t.gen.asid}", UVM_NONE)
-      }
-
-      class Agent(name: String, parent: UVMComponent) extends UVMComponent(name, Some(parent)) {
-        var driver: Option[TLBReqDriver] = None
-        var monitor: Option[TLBReqMonitor] = None
-
-        override def buildPhase(phase: UVMPhase): Unit = {
-          driver = Some(create("driver", this) { case (s, p) => new TLBReqDriver(p) })
-          monitor = Some(create("monitor", this) { case (s, p) => new TLBReqMonitor(p) })
-        }
-      }
-
-      class SequenceTest(name: String) extends UVMSequenceBase(name) {
-        override def body(): Unit = {
-          0 to 30 foreach { i =>
-            val item = DecoupleSeqItem(s"item $i", TLBReqItem(i, 0, true, true, true))
-            startItem(item)
-            finishItem(item)
-          }
-        }
-      }
-
-      class UVMPhaseTest(name: String) extends UVMTest(name, None) {
-        var agent: Option[Agent] = None
-
-        override def buildPhase(phase: UVMPhase): Unit = {
-          agent = Some(create("agent", this) { case (s, p) => new Agent(s, p) })
-        }
-
-        override def connectPhase(phase: UVMPhase): Unit = {
-          agent.get.driver.get.seqItemPort.connect(sqr.seqItemExport)
-        }
-
-        override def runPhase(phase: UVMPhase): Unit = {
-          phase.raiseObjection(phase)
-          val s = new SequenceTest("s")
-          s.start(sqr)
-          phase.dropObjection(phase)
-        }
-      }
-
-      uvmRunTest { case (s, _) =>
-        new UVMPhaseTest(s)
+    class TLBHarness extends ChiterHarness {
+      val io = withClockAndReset(clock, reset) {
+        val tlb = Module(new TLB())
+        val io = IO(tlb.io.cloneType)
+        io <> tlb.io
+        io
       }
     }
+
+    case class TLBReqItem(asid: Int, vpn: Int, passthrough: Boolean, instruction: Boolean, store: Boolean)
+
+    val sqr = new UVMSequencer[DecoupleSeqItem[TLBReqItem], UVMSequenceItem]("sqr", None)
+
+    class TLBReqDriver(parent: UVMComponent, bus: DecoupledIO[TLBReq], clk: Clock) extends DecoupleDriver[TLBReqItem, TLBReq]("TLBReqDriver", Some(parent), bus)(clk) {
+      override def driver(t: TLBReqItem): TLBReq = chiselTypeOf(bus.bits).Lit(
+        _.vpn -> t.vpn.U,
+        _.asid -> t.asid.U,
+        _.passthrough -> t.passthrough.B,
+        _.store -> t.store.B,
+        _.instruction -> t.instruction.B
+      )
+    }
+
+    class TLBReqMonitor(parent: UVMComponent, bus: DecoupledIO[TLBReq], clk: Clock) extends DecoupleMonitor[TLBReqItem, TLBReq]("TLBReqMonitor", Some(parent), bus)(clk) {
+      override def monitor(): DecoupleSeqItem[TLBReqItem] = DecoupleSeqItem("monitor_item", TLBReqItem(
+        bus.bits.vpn.peek().litValue.toInt,
+        bus.bits.asid.peek().litValue.toInt,
+        bus.bits.passthrough.peek().litToBoolean,
+        bus.bits.instruction.peek().litToBoolean,
+        bus.bits.store.peek().litToBoolean
+      ))
+
+      override def write(t: DecoupleSeqItem[TLBReqItem]): Unit =
+        uvmInfo(getTypeName, s"monitor item: ${t.gen.asid}", UVM_NONE)
+    }
+
+    class Agent(name: String, parent: UVMComponent) extends UVMComponent(name, Some(parent)) {
+      var driver: Option[TLBReqDriver] = None
+      var monitor: Option[TLBReqMonitor] = None
+
+      var driverIF: Option[DecoupledIO[TLBReq]] = None
+      var monitorIF: Option[DecoupledIO[TLBReq]] = None
+      var clk: Option[Clock] = None
+
+      override def buildPhase(phase: UVMPhase): Unit = {
+        driver = Some(create("driver", this) { case (s, p) => new TLBReqDriver(p, driverIF.get, clk.get) })
+        monitor = Some(create("monitor", this) { case (s, p) => new TLBReqMonitor(p, monitorIF.get, clk.get) })
+      }
+    }
+
+    class SequenceTest(name: String) extends UVMSequenceBase(name) {
+      override def body(): Unit = {
+        0 to 30 foreach { i =>
+          val item = DecoupleSeqItem(s"item $i", TLBReqItem(i, 0, true, true, true))
+          startItem(item)
+          finishItem(item)
+        }
+      }
+    }
+
+    case class TLBConfig(driverIF: DecoupledIO[TLBReq],
+                         monitorIF: DecoupledIO[TLBReq],
+                         clk: Clock)
+    class TLBTest(name: String, cfg: TLBConfig) extends UVMTest(name, None) {
+      var agent: Option[Agent] = None
+
+      override def buildPhase(phase: UVMPhase): Unit = {
+        agent = Some(create("agent", this) { case (s, p) => new Agent(s, p) })
+        agent.get.driverIF = Some(cfg.driverIF)
+        agent.get.monitorIF = Some(cfg.monitorIF)
+        agent.get.clk = Some(cfg.clk)
+      }
+
+      override def connectPhase(phase: UVMPhase): Unit = {
+        agent.get.driver.get.seqItemPort.connect(sqr.seqItemExport)
+      }
+
+      override def runPhase(phase: UVMPhase): Unit = {
+        phase.raiseObjection(phase)
+        val s = new SequenceTest("s")
+        s.start(sqr)
+        phase.dropObjection(phase)
+      }
+    }
+
+    class TLBChiter extends Chiter[TLBHarness] with TreadleBackend {
+      override def harness(): TLBHarness = new TLBHarness
+
+      override def body: TLBHarness => Unit = { c =>
+        clock(c.clock, 3)
+
+        uvmRunTest { case (s, _) =>
+          new TLBTest(s, TLBConfig(c.io.req, c.io.req, c.clock))
+        }
+      }
+    }
+
+    uvmRun(new TLBChiter)
   }
 }

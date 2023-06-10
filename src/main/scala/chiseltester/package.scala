@@ -6,7 +6,7 @@ import scala.annotation.tailrec
 import scala.util.DynamicVariable
 
 package object chiseltester {
-  var verbosity = true
+  var verbosity = false
 
   def debugLog(str: => String): Unit = {
     if (verbosity)

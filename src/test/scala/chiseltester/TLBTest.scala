@@ -14,19 +14,6 @@ import uvm._
 class TLBTest extends AnyFlatSpec with ChiselTester with Matchers {
   behavior of "ChiselTester"
 
-  class TestBase(implicit dut: TLB) {
-    val reqAgent = new TLBReqAgent(dut.io.req, dut.clock)
-
-    def run(): Unit = {}
-  }
-
-  class TestSmoke(implicit dut: TLB) extends TestBase {
-    override def run(): Unit = {
-      dut.io.ptw.status.vm.poke((1 << 3).U)
-      reqAgent.drive("h5a5a00".U)
-    }
-  }
-
   it should "pass tlb test" in {
 
     implicit val p: Parameters = Parameters((site, here, up) => {

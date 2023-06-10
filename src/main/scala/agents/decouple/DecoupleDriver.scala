@@ -2,7 +2,6 @@ package agents.decouple
 
 import chisel3._
 import chisel3.util._
-import chiseltester._
 import uvm._
 
 abstract class DecoupleDriver[T, REQ <: Data](name: String,

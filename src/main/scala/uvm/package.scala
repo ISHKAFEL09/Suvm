@@ -1,8 +1,57 @@
 import scala.language.implicitConversions
 import scala.reflect.ClassTag
-import chiseltester._
+import chiter._
+import chisel3._
+import chisel3.reflect.DataMirror
 
 package object uvm {
+  private[uvm] var uvmChiter: Option[Chiter[ChiterHarness] with ChiterSimulator] = None
+
+  private def setChiter[T <: ChiterHarness](c: Chiter[T]): Unit =
+    uvmChiter = Some(c.asInstanceOf[Chiter[ChiterHarness] with ChiterSimulator])
+
+  implicit class testableClock(x: Clock) {
+    def step(n: Int = 1): Unit = {
+      uvmChiter.get.~>(x)
+      0 until n foreach { _ =>
+        uvmChiter.get.~>(1)
+        uvmChiter.get.~>(x)
+      }
+    }
+  }
+
+  implicit class testableData[T <: Data](x: T) {
+    def pokeBits(signal: Bits, value: BigInt): Unit = {
+      if (DataMirror.directionOf(signal) != ActualDirection.Input) {
+        throw new Exception("Can only poke inputs")
+      }
+      uvmChiter.get.poke(signal, value)
+    }
+
+    def poke(value: T): Unit = (x, value) match {
+      case (x: Bool, value: Bool) => pokeBits(x, value.litValue)
+      case (x: Bits, value: UInt) => pokeBits(x, value.litValue)
+      case (x: SInt, value: SInt) => pokeBits(x, value.litValue)
+      case (x: Bundle, value: Bundle) => x.elements zip value.elements foreach {
+        case ((_, x), (_, value)) => x.poke(value)
+      }
+      case x => throw new Exception(s"don't know how to poke $x")
+    }
+
+    def peekBits(stale: Boolean): T = x match {
+      case x: Bool => uvmChiter.get.peek(x) match {
+        case x: BigInt if x == 0 => false.B.asInstanceOf[T]
+        case x: BigInt if x == 1 => true.B.asInstanceOf[T]
+        case x => throw new Exception(s"peeked Bool with value $x not 0 or 1")
+      }
+      case x: UInt => uvmChiter.get.peek(x).asUInt(x.getWidth.W).asInstanceOf[T]
+      case x: SInt => uvmChiter.get.peek(x).asSInt(x.getWidth.W).asInstanceOf[T]
+      case x => throw new Exception(s"don't know how to peek $x")
+    }
+
+    def peek(): T = peekBits(false)
+  }
+  
   // private, for uvm
   private[uvm] def getTrace(level: Int = 2): String = {
     new Throwable().getStackTrace()(level).toString
@@ -175,12 +224,17 @@ package object uvm {
 
   def uvmRunTest[T <: UVMTest : ClassTag](tc: (String, UVMComponent) => T): Unit = {
     val uvmTestTop = create("uvmTestTop", top) { case (s, p) => tc(s, p) }
-    val runner = fork(s"${uvmTestTop.getName}") {
+    val runner = uvmChiter.get.fork(s"${uvmTestTop.getName}") {
       UVMPhase.mRunPhases()
     }
-    ~>(0)
-    ~>(top.mPhaseAllDone)
+    uvmChiter.get.~>(0)
+    uvmChiter.get.~>(top.mPhaseAllDone)
     runner.kill()
-    finish(false)
+    uvmChiter.get.finish(false)
+  }
+
+  def uvmRun[T <: ChiterHarness](c: Chiter[T]): Unit = {
+    setChiter(c)
+    uvmChiter.get.run()
   }
 }

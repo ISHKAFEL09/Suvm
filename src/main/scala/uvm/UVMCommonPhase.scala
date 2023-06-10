@@ -1,6 +1,5 @@
 package uvm
 
-import chiseltester._
 import ENUM_PHASE_TYPE._
 import ENUM_PHASE_STATE._
 
@@ -52,7 +51,7 @@ abstract class UVMBottomUpPhase(name: String) extends UVMPhase(name, UVM_PHASE_I
 
 abstract class UVMTaskPhase(name: String) extends UVMBottomUpPhase(name) {
   override def execute(comp: UVMComponent, phase: UVMPhase): Unit = {
-    fork(s"${phase.getName}_${comp.getName}_execute") {
+    uvmChiter.get.fork(s"${phase.getName}_${comp.getName}_execute") {
       execTask(comp, phase)
     }
   }

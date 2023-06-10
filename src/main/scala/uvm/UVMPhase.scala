@@ -1,6 +1,6 @@
 package uvm
 
-import chiseltester._
+import chiter._
 import ENUM_PHASE_TYPE._
 import ENUM_PHASE_STATE._
 import uvm.UVMPhase.{mExecutionPhases, mPhaseHopper}
@@ -21,7 +21,7 @@ class UVMPhase(name: String = "uvmPhase",
 
   private val mParent: Option[UVMPhase] = parent
 
-  private var mPhaseProc: Option[TesterThreadList] = None
+  private var mPhaseProc: Option[ChiterThreadList] = None
   private var phaseDone: Option[UVMObjection] = None
 
   // TODO: cmd line args
@@ -91,52 +91,52 @@ class UVMPhase(name: String = "uvmPhase",
       case UVM_PHASE_NODE =>
         mState = UVM_PHASE_STARTED
         mImp.get.traverse(top, this, UVM_PHASE_STARTED)
-        ~>(0)
+        uvmChiter.get.~>(0)
 
         mImp.get match {
           case taskPhase: UVMTaskPhase =>
             mExecutionPhases += this
             mState = UVM_PHASE_EXECUTING
-            mPhaseProc = Some(fork(s"phase_${getName}_executing") {
+            mPhaseProc = Some(uvmChiter.get.fork(s"phase_${getName}_executing") {
               taskPhase.traverse(top, this, UVM_PHASE_EXECUTING)
-              ~>(false)
+              uvmChiter.get.~>(false)
             })
-            ~>(0)
+            uvmChiter.get.~>(0)
             if (getObjection.nonEmpty && getObjection.get.getObjectionTotal() != 0)
               getObjection.get.waitFor(ENUM_OBJECTION_EVENT.UVM_ALL_DROPPED, Some(top))
 
           case _ =>
             mState = UVM_PHASE_EXECUTING
-            ~>(0)
+            uvmChiter.get.~>(0)
             mImp.get.traverse(top, this, UVM_PHASE_EXECUTING)
         }
 
       case _ =>
         mState = UVM_PHASE_STARTED
-        ~>(0)
+        uvmChiter.get.~>(0)
         mState = UVM_PHASE_EXECUTING
     }
 
     mExecutionPhases -= this
     mState = UVM_PHASE_ENDED
     mImp.foreach(_.traverse(top, this, UVM_PHASE_ENDED))
-    ~>(0)
+    uvmChiter.get.~>(0)
 
     mPhaseProc.foreach(_.kill())
     mPhaseProc = None
-    ~>(0)
+    uvmChiter.get.~>(0)
 
     // TODO:
 //    getObjection.clear()
     mState = UVM_PHASE_DONE
-    ~>(0)
+    uvmChiter.get.~>(0)
 
     if (mSuccessors.isEmpty)
       top.mPhaseAllDone = true
     else {
       mSuccessors.foreach { i =>
         i.mState = UVM_PHASE_SCHEDULED
-        ~>(0)
+        uvmChiter.get.~>(0)
         mPhaseHopper += i
       }
     }
@@ -154,12 +154,12 @@ object UVMPhase {
 
     @annotation.tailrec
     def phaseLoop(): Unit = {
-      ~> (mPhaseHopper.nonEmpty)
+      uvmChiter.get.~> (mPhaseHopper.nonEmpty)
       val phase = mPhaseHopper.dequeue()
-      fork(s"phase_${phase.getName}") {
+      uvmChiter.get.fork(s"phase_${phase.getName}") {
         phase.executePhase()
       }
-      ~> (0)
+      uvmChiter.get.~> (0)
       phaseLoop()
     }
 
