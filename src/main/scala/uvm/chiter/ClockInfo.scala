@@ -1,4 +1,4 @@
-package chiter
+package uvm.chiter
 
 import chisel3._
 

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
-package chiseltester
+package uvm.chiter
 
 import chisel3.RawModule
 import chisel3.stage._

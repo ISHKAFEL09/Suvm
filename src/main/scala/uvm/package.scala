@@ -1,6 +1,6 @@
 import scala.language.implicitConversions
 import scala.reflect.ClassTag
-import chiter._
+import uvm.chiter._
 import chisel3._
 import chisel3.reflect.DataMirror
 
@@ -222,8 +222,8 @@ package object uvm {
     }
   }
 
-  def uvmRunTest[T <: UVMTest : ClassTag](tc: (String, UVMComponent) => T): Unit = {
-    val uvmTestTop = create("uvmTestTop", top) { case (s, p) => tc(s, p) }
+  private def uvmRunTest[T <: UVMTest : ClassTag](tc: => T): Unit = {
+    val uvmTestTop = create("uvmTestTop", top) { case (_, _) => tc }
     val runner = uvmChiter.get.fork(s"${uvmTestTop.getName}") {
       UVMPhase.mRunPhases()
     }
@@ -235,6 +235,13 @@ package object uvm {
 
   def uvmRun[T <: ChiterHarness](c: Chiter[T]): Unit = {
     setChiter(c)
-    uvmChiter.get.run()
+    uvmChiter.get.run { dut =>
+      uvmRunTest(c.top(dut.asInstanceOf[T]))
+    }
   }
+
+  def debugLog(s: String): Unit =
+    println(s"[DEBUG LOG] $s")
+
+  object TestFinishedException extends Exception("Test Finished!")
 }

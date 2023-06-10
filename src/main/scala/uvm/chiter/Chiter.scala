@@ -1,9 +1,10 @@
-package chiter
+package uvm.chiter
 
 import chisel3._
 import firrtl.AnnotationSeq
 import firrtl.options.TargetDirAnnotation
 import treadle.WriteVcdAnnotation
+import uvm._
 
 import java.util.concurrent.Semaphore
 
@@ -90,15 +91,16 @@ trait Chiter[T <: ChiterHarness] {
 
   def harness(): T
 
+  def top: T => UVMTest
+
   def annotations: AnnotationSeq = AnnotationSeq(Seq(
     TargetDirAnnotation("test_run_dir/chiseltester"),
     WriteVcdAnnotation)
   )
 
-  def body: T => Unit
-
-  def run(): Unit = {
+  def run(body: T => Unit): Unit = {
     build(harness, annotations)
+    dut.get.clocks.foreach(addClock)
     backendRun(body)
   }
 
@@ -126,8 +128,6 @@ trait Chiter[T <: ChiterHarness] {
   }
 
   def getCurrent: ChiterThread = current.get
-
-  def clock(clk: Clock, period: BigInt, duty: Double = 0.5): Unit = addClock(clk, period)
 
   def finish(trace: Boolean = true): Unit = {
     if (trace) {

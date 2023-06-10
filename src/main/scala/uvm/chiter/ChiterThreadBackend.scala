@@ -1,8 +1,8 @@
-package chiter
+package uvm.chiter
 
 import java.util.concurrent._
 import scala.collection.mutable
-import chisel3._
+import uvm._
 
 trait ChiterThreadBackend {
   var current: Option[ChiterThread] = None
@@ -13,7 +13,7 @@ trait ChiterThreadBackend {
   val zombieThreads: mutable.ListBuffer[ChiterThread] = mutable.ListBuffer.empty[ChiterThread]
   val clocks: mutable.ListBuffer[ClockInfo] = mutable.ListBuffer.empty[ClockInfo]
 
-  def addClock(clk: Clock, period: BigInt): Unit = clocks += ClockInfo(clk, period)
+  def addClock(clk: ClockInfo): Unit = clocks += clk
 
   def createThread(name: String, runnable: () => Unit, parent: Option[ChiterThread]): ChiterThread
 

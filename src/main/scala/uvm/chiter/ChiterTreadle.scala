@@ -1,4 +1,4 @@
-package chiter
+package uvm.chiter
 
 import chisel3._
 import chisel3.reflect.DataMirror
@@ -6,6 +6,7 @@ import firrtl._
 import firrtl.transforms._
 import treadle._
 import treadle.stage._
+import uvm._
 
 trait TreadleSimulator extends ChiterSimulator {
   var timeNow: BigInt = 0

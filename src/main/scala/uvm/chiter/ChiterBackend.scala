@@ -1,5 +1,6 @@
-package chiter
+package uvm.chiter
 
+import uvm._
 import scala.collection.mutable
 
 trait ChiterBackend {

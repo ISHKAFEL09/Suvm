@@ -8,7 +8,7 @@ import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import rocket2._
 import rocket2.config._
-import chiter._
+import uvm.chiter._
 
 
 class UVMSmokeTest extends AnyFlatSpec with Matchers {
@@ -89,6 +89,8 @@ class UVMSmokeTest extends AnyFlatSpec with Matchers {
         io <> tlb.io
         io
       }
+
+      clock(clock, 3)
     }
 
     case class TLBReqItem(asid: Int, vpn: Int, passthrough: Boolean, instruction: Boolean, store: Boolean)
@@ -145,6 +147,7 @@ class UVMSmokeTest extends AnyFlatSpec with Matchers {
     case class TLBConfig(driverIF: DecoupledIO[TLBReq],
                          monitorIF: DecoupledIO[TLBReq],
                          clk: Clock)
+
     class TLBTest(name: String, cfg: TLBConfig) extends UVMTest(name, None) {
       var agent: Option[Agent] = None
 
@@ -168,14 +171,11 @@ class UVMSmokeTest extends AnyFlatSpec with Matchers {
     }
 
     class TLBChiter extends Chiter[TLBHarness] with TreadleBackend {
-      override def harness(): TLBHarness = new TLBHarness
+      override def harness(): TLBHarness =
+        new TLBHarness
 
-      override def body: TLBHarness => Unit = { c =>
-        clock(c.clock, 3)
-
-        uvmRunTest { case (s, _) =>
-          new TLBTest(s, TLBConfig(c.io.req, c.io.req, c.clock))
-        }
+      override def top: TLBHarness => TLBTest = { c =>
+        new TLBTest("TLBTest", TLBConfig(c.io.req, c.io.req, c.clock))
       }
     }
 
