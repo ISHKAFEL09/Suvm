@@ -42,7 +42,7 @@ abstract class UVMSequencerBase(name: String, parent: Option[UVMComponent]) exte
   }
 
   private def mWaitArb(reqID: Int): Unit = {
-    uvmChiter.get.~>(arbCompleted.contains(reqID))
+    ~>(arbCompleted.contains(reqID))
     arbCompleted -= reqID
   }
 
@@ -54,7 +54,7 @@ abstract class UVMSequencerBase(name: String, parent: Option[UVMComponent]) exte
   }
 
   protected def mSelectSequence(): Unit = {
-    uvmChiter.get.~>(arbSequenceQueue.nonEmpty)
+    ~>(arbSequenceQueue.nonEmpty)
     mSetArb(arbSequenceQueue.remove(0).reqID)
   }
 
@@ -64,12 +64,12 @@ abstract class UVMSequencerBase(name: String, parent: Option[UVMComponent]) exte
     if (lockReq) {
       UVMSequencerBase.requestID += 1
       arbSequenceQueue += UVMSequenceReq(
-        grant = false, seqID, UVMSequencerBase.requestID, pri, uvmChiter.get.getCurrent, ENUM_SEQ_REQ.SEQ_TYPE_LOCK, seq)
+        grant = false, seqID, UVMSequencerBase.requestID, pri, getCurrent, ENUM_SEQ_REQ.SEQ_TYPE_LOCK, seq)
     }
 
     UVMSequencerBase.requestID += 1
     arbSequenceQueue += UVMSequenceReq(
-      grant = false, seqID, UVMSequencerBase.requestID, pri, uvmChiter.get.getCurrent, ENUM_SEQ_REQ.SEQ_TYPE_REQ, seq)
+      grant = false, seqID, UVMSequencerBase.requestID, pri, getCurrent, ENUM_SEQ_REQ.SEQ_TYPE_REQ, seq)
 
     mWaitArb(UVMSequencerBase.requestID)
   }
@@ -79,9 +79,9 @@ abstract class UVMSequencerBase(name: String, parent: Option[UVMComponent]) exte
     mWaitForItemTransactionID = -1
     mWaitForItemSequenceID = -1
     if (tid == -1)
-      uvmChiter.get.~>(seqID == mWaitForItemSequenceID)
+      ~>(seqID == mWaitForItemSequenceID)
     else
-      uvmChiter.get.~>(seqID == mWaitForItemSequenceID && mWaitForItemTransactionID == tid)
+      ~>(seqID == mWaitForItemSequenceID && mWaitForItemTransactionID == tid)
   }
 
   def sendRequest[REQ <: UVMSequenceItem](seq: UVMSequenceBase, t: REQ): Unit

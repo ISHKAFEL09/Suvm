@@ -91,52 +91,52 @@ class UVMPhase(name: String = "uvmPhase",
       case UVM_PHASE_NODE =>
         mState = UVM_PHASE_STARTED
         mImp.get.traverse(top, this, UVM_PHASE_STARTED)
-        uvmChiter.get.~>(0)
+        ~>(0)
 
         mImp.get match {
           case taskPhase: UVMTaskPhase =>
             mExecutionPhases += this
             mState = UVM_PHASE_EXECUTING
-            mPhaseProc = Some(uvmChiter.get.fork(s"phase_${getName}_executing") {
+            mPhaseProc = Some(fork(s"phase_${getName}_executing") {
               taskPhase.traverse(top, this, UVM_PHASE_EXECUTING)
-              uvmChiter.get.~>(false)
+              ~>(false)
             })
-            uvmChiter.get.~>(0)
+            ~>(0)
             if (getObjection.nonEmpty && getObjection.get.getObjectionTotal() != 0)
               getObjection.get.waitFor(ENUM_OBJECTION_EVENT.UVM_ALL_DROPPED, Some(top))
 
           case _ =>
             mState = UVM_PHASE_EXECUTING
-            uvmChiter.get.~>(0)
+            ~>(0)
             mImp.get.traverse(top, this, UVM_PHASE_EXECUTING)
         }
 
       case _ =>
         mState = UVM_PHASE_STARTED
-        uvmChiter.get.~>(0)
+        ~>(0)
         mState = UVM_PHASE_EXECUTING
     }
 
     mExecutionPhases -= this
     mState = UVM_PHASE_ENDED
     mImp.foreach(_.traverse(top, this, UVM_PHASE_ENDED))
-    uvmChiter.get.~>(0)
+    ~>(0)
 
     mPhaseProc.foreach(_.kill())
     mPhaseProc = None
-    uvmChiter.get.~>(0)
+    ~>(0)
 
     // TODO:
 //    getObjection.clear()
     mState = UVM_PHASE_DONE
-    uvmChiter.get.~>(0)
+    ~>(0)
 
     if (mSuccessors.isEmpty)
       top.mPhaseAllDone = true
     else {
       mSuccessors.foreach { i =>
         i.mState = UVM_PHASE_SCHEDULED
-        uvmChiter.get.~>(0)
+        ~>(0)
         mPhaseHopper += i
       }
     }
@@ -154,12 +154,12 @@ object UVMPhase {
 
     @annotation.tailrec
     def phaseLoop(): Unit = {
-      uvmChiter.get.~> (mPhaseHopper.nonEmpty)
+      ~> (mPhaseHopper.nonEmpty)
       val phase = mPhaseHopper.dequeue()
-      uvmChiter.get.fork(s"phase_${phase.getName}") {
+      fork(s"phase_${phase.getName}") {
         phase.executePhase()
       }
-      uvmChiter.get.~> (0)
+      ~> (0)
       phaseLoop()
     }
 

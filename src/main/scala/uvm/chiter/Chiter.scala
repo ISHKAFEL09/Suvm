@@ -94,7 +94,7 @@ trait Chiter[T <: ChiterHarness] {
   def top: T => UVMTest
 
   def annotations: AnnotationSeq = AnnotationSeq(Seq(
-    TargetDirAnnotation("test_run_dir/chiseltester"),
+    TargetDirAnnotation("test_run_dir"),
     WriteVcdAnnotation)
   )
 
@@ -116,7 +116,8 @@ trait Chiter[T <: ChiterHarness] {
 
   def ~>(clk: Clock): Unit = {
     clocks.find(_.clk == clk) match {
-      case Some(clkInfo) => ~>(clkInfo.periodLeft == clkInfo.period)
+      case Some(clkInfo) =>
+        ~>(clkInfo.periodLeft == clkInfo.period)
       case None =>
         ~>(peek(clk) == 0)
         ~>(peek(clk) == 1)
@@ -129,9 +130,15 @@ trait Chiter[T <: ChiterHarness] {
 
   def getCurrent: ChiterThread = current.get
 
-  def finish(trace: Boolean = true): Unit = {
-    if (trace) {
-      println(s"finish() called in ${new Throwable().getStackTrace()(1).toString}")
+  def finish(status: FinishStatus): Unit = {
+    ~>(0)
+    simFinish()
+    status match {
+      case SuccessStatus =>
+      case StopStatus =>
+        println(s"finish() called in ${new Throwable().getStackTrace()(4).toString}")
+      case FatalStatus =>
+        assert(cond = false, "Fatal!!!")
     }
     throw TestFinishedException
   }

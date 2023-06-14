@@ -17,6 +17,19 @@ trait ChiterBackend {
     }
   }
 
+  private def updateClocks(): Unit = {
+    clocks.foreach { i =>
+      i.periodLeft -= 1
+      if (i.periodLeft == 0 || i.periodLeft == i.period / 2) {
+        poke(i.clk, if (peek(i.clk) == 0) 1 else 0)
+      }
+      if (i.periodLeft == 0) {
+        i.periodLeft = i.period
+      }
+      println(s"period left: ${i.periodLeft}, period: ${i.period}")
+    }
+  }
+
   private def mainThreadStart[T <: ChiterHarness](testFn: T => Unit): Unit = {
     clocks.foreach { i => poke(i.clk, 0) }
 
@@ -31,12 +44,17 @@ trait ChiterBackend {
     blockedThreads.update(0, mutable.ListBuffer(mainThread))
 
     try {
+      clocks.foreach(i => poke(i.clk, if (i.periodLeft >= i.period / 2) 0 else 1))
+
       while (!mainThread.isDone(false)) {
         val timeNow = getTimeNow
+        debugLog(s"clock $timeNow")
+        updateClocks()
+        println(blockedThreads.keys, blockedThreads.values.map(_.size))
+
         val threads = mutable.ListBuffer.empty[ChiterThread]
         threads ++= blockedThreads.getOrElse(timeNow, Seq())
         blockedThreads.remove(timeNow)
-        debugLog(s"clock $timeNow")
 
         runThreads(threads.toSeq)
 
@@ -48,14 +66,6 @@ trait ChiterBackend {
         }
         zombieThreads.clear()
         step(1)
-
-        clocks.foreach { i =>
-          i.periodLeft -= 1
-          if (i.periodLeft == 0) {
-            i.periodLeft = i.period
-            poke(i.clk, if (peek(i.clk) == 0) 1 else 0)
-          }
-        }
       }
     } finally {
       allThreads.foreach { i =>

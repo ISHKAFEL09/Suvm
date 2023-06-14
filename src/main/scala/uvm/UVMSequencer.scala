@@ -21,7 +21,7 @@ class UVMSequencer[REQ <: UVMSequenceItem, RSP](name: String, parent: Option[UVM
 
     sequenceItemRequested = true
     getNextItemCalled = true
-    uvmChiter.get.~>(reqQueue.nonEmpty)
+    ~>(reqQueue.nonEmpty)
     reqQueue.head
   }
 

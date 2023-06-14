@@ -5,17 +5,21 @@ import chisel3._
 import chisel3.reflect.DataMirror
 
 package object uvm {
-  private[uvm] var uvmChiter: Option[Chiter[ChiterHarness] with ChiterSimulator] = None
+  private[uvm] type CC = Chiter[ChiterHarness] with ChiterSimulator
+
+  private var uvmChiter: Option[CC] = None
 
   private def setChiter[T <: ChiterHarness](c: Chiter[T]): Unit =
-    uvmChiter = Some(c.asInstanceOf[Chiter[ChiterHarness] with ChiterSimulator])
+    uvmChiter = Some(c.asInstanceOf[CC])
+
+  implicit lazy val ct: CC = uvmChiter.get
 
   implicit class testableClock(x: Clock) {
     def step(n: Int = 1): Unit = {
-      uvmChiter.get.~>(x)
+      implicitly[CC].~>(x)
       0 until n foreach { _ =>
-        uvmChiter.get.~>(1)
-        uvmChiter.get.~>(x)
+        implicitly[CC].~>(1)
+        implicitly[CC].~>(x)
       }
     }
   }
@@ -25,7 +29,7 @@ package object uvm {
       if (DataMirror.directionOf(signal) != ActualDirection.Input) {
         throw new Exception("Can only poke inputs")
       }
-      uvmChiter.get.poke(signal, value)
+      implicitly[CC].poke(signal, value)
     }
 
     def poke(value: T): Unit = (x, value) match {
@@ -39,13 +43,13 @@ package object uvm {
     }
 
     def peekBits(stale: Boolean): T = x match {
-      case x: Bool => uvmChiter.get.peek(x) match {
+      case x: Bool => implicitly[CC].peek(x) match {
         case x: BigInt if x == 0 => false.B.asInstanceOf[T]
         case x: BigInt if x == 1 => true.B.asInstanceOf[T]
         case x => throw new Exception(s"peeked Bool with value $x not 0 or 1")
       }
-      case x: UInt => uvmChiter.get.peek(x).asUInt(x.getWidth.W).asInstanceOf[T]
-      case x: SInt => uvmChiter.get.peek(x).asSInt(x.getWidth.W).asInstanceOf[T]
+      case x: UInt => implicitly[CC].peek(x).asUInt(x.getWidth.W).asInstanceOf[T]
+      case x: SInt => implicitly[CC].peek(x).asSInt(x.getWidth.W).asInstanceOf[T]
       case x => throw new Exception(s"don't know how to peek $x")
     }
 
@@ -224,24 +228,48 @@ package object uvm {
 
   private def uvmRunTest[T <: UVMTest : ClassTag](tc: => T): Unit = {
     val uvmTestTop = create("uvmTestTop", top) { case (_, _) => tc }
-    val runner = uvmChiter.get.fork(s"${uvmTestTop.getName}") {
+    val runner = implicitly[CC].fork(s"${uvmTestTop.getName}") {
       UVMPhase.mRunPhases()
     }
-    uvmChiter.get.~>(0)
-    uvmChiter.get.~>(top.mPhaseAllDone)
+    implicitly[CC].~>(0)
+    implicitly[CC].~>(top.mPhaseAllDone)
     runner.kill()
-    uvmChiter.get.finish(false)
+    implicitly[CC].finish(SuccessStatus)
   }
 
   def uvmRun[T <: ChiterHarness](c: Chiter[T]): Unit = {
     setChiter(c)
-    uvmChiter.get.run { dut =>
+    implicitly[CC].run { dut =>
       uvmRunTest(c.top(dut.asInstanceOf[T]))
     }
   }
 
+  private var forkID: Int = 0
+  private def getForkID: Int = synchronized {
+    forkID += 1
+    forkID
+  }
+
+  def fork(name: String = "thread")(runnable: => Unit): ChiterThreadList =
+    implicitly[CC].fork(name)(runnable)
+
+  def fork(runnable: => Unit): ChiterThreadList =
+    fork(s"$getForkID")(runnable)
+
+  def ~>(condition: => Boolean): Unit = implicitly[CC].~>(condition)
+
+  def ~>(cycles: Int): Unit = implicitly[CC].~>(cycles)
+
+  def ~>(event: Event): Unit = implicitly[CC].~>(event)
+
+  def ~>(clk: Clock): Unit = implicitly[CC].~>(clk)
+
+  def createEvent(name: String): Event = implicitly[CC].createEvent(name)
+
+  def getCurrent: ChiterThread = implicitly[CC].getCurrent
+
+  def finish(status: FinishStatus = StopStatus): Unit = implicitly[CC].finish(status)
+
   def debugLog(s: String): Unit =
     println(s"[DEBUG LOG] $s")
-
-  object TestFinishedException extends Exception("Test Finished!")
 }

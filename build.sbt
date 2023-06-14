@@ -17,14 +17,15 @@ lazy val root = (project in file("."))
       //      "edu.berkeley.cs" %% "chiseltest" % chiseltestVersion,
       "edu.berkeley.cs" %% "treadle" % treadleVersion,
       "edu.berkeley.cs" %% "firrtl" % firrtlVersion,
-      "org.scalatest" %% "scalatest" % "3.2.9"
+      "org.scalatest" %% "scalatest" % "3.2.15",
+      "net.java.dev.jna" % "jna" % "5.13.0",
+      "org.scalatra.scalate" %% "scalate-core" % "1.9.8"
     ),
     scalacOptions ++= Seq(
       "-language:reflectiveCalls",
       "-deprecation",
       "-feature",
       "-Xcheckinit",
-      "-P:chiselplugin:genBundleElements",
     ),
     addCompilerPlugin("edu.berkeley.cs" % "chisel3-plugin" % chiselVersion cross CrossVersion.full),
   )

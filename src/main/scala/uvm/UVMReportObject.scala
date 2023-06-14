@@ -75,7 +75,7 @@ class UVMReportObject(name: String = "") extends UVMObject(name) {
                      contextName: String = "",
                      reportEnabledChecked: Boolean = false): Unit = {
     uvmReport(UVM_FATAL, idx, msg, verbosity, trace, contextName, reportEnabledChecked)
-    assert(assertion = false, "UVM FATAL!!!")
+    finish(FatalStatus)
   }
 
   def uvmProcessReportMessage(reportMessage: UVMReportMessage): Unit = {

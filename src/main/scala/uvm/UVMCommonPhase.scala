@@ -51,7 +51,7 @@ abstract class UVMBottomUpPhase(name: String) extends UVMPhase(name, UVM_PHASE_I
 
 abstract class UVMTaskPhase(name: String) extends UVMBottomUpPhase(name) {
   override def execute(comp: UVMComponent, phase: UVMPhase): Unit = {
-    uvmChiter.get.fork(s"${phase.getName}_${comp.getName}_execute") {
+    fork(s"${phase.getName}_${comp.getName}_execute") {
       execTask(comp, phase)
     }
   }

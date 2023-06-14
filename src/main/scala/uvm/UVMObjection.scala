@@ -104,15 +104,15 @@ class UVMObjection(name: String = "") extends UVMReportObject(name) {
     }
 
     val e = mEvents.getOrElseUpdate(i, UVMObjectionEvents(0,
-      uvmChiter.get.createEvent("raised"),
-      uvmChiter.get.createEvent("dropped"),
-      uvmChiter.get.createEvent("all_dropped")))
+      createEvent("raised"),
+      createEvent("dropped"),
+      createEvent("all_dropped")))
 
     e.waiters += 1
     event match {
-      case ENUM_OBJECTION_EVENT.UVM_RAISED => uvmChiter.get.~>(e.raised)
-      case ENUM_OBJECTION_EVENT.UVM_DROPPED => uvmChiter.get.~>(e.dropped)
-      case ENUM_OBJECTION_EVENT.UVM_ALL_DROPPED => uvmChiter.get.~>(e.allDropped)
+      case ENUM_OBJECTION_EVENT.UVM_RAISED => ~>(e.raised)
+      case ENUM_OBJECTION_EVENT.UVM_DROPPED => ~>(e.dropped)
+      case ENUM_OBJECTION_EVENT.UVM_ALL_DROPPED => ~>(e.allDropped)
     }
     e.waiters -= 1
     if (e.waiters == 0)

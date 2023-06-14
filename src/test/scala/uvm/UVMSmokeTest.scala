@@ -4,10 +4,13 @@ import agents.decouple._
 import chisel3._
 import chisel3.experimental.BundleLiterals._
 import chisel3.util._
+import firrtl.AnnotationSeq
+import firrtl.options.TargetDirAnnotation
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import rocket2._
 import rocket2.config._
+import treadle.WriteVcdAnnotation
 import uvm.chiter._
 
 
@@ -83,14 +86,15 @@ class UVMSmokeTest extends AnyFlatSpec with Matchers {
     })
 
     class TLBHarness extends ChiterHarness {
-      val io = withClockAndReset(clock, reset) {
-        val tlb = Module(new TLB())
-        val io = IO(tlb.io.cloneType)
-        io <> tlb.io
-        io
-      }
+      val tlb = Module(new TLB())
+      val io = IO(tlb.io.cloneType)
+      val clk = IO(Input(Clock()))
+      io <> tlb.io
 
-      clock(clock, 3)
+      tlb.clock := clk
+      tlb.reset := reset
+
+      clock(clk, 6)
     }
 
     case class TLBReqItem(asid: Int, vpn: Int, passthrough: Boolean, instruction: Boolean, store: Boolean)
@@ -137,7 +141,7 @@ class UVMSmokeTest extends AnyFlatSpec with Matchers {
     class SequenceTest(name: String) extends UVMSequenceBase(name) {
       override def body(): Unit = {
         0 to 30 foreach { i =>
-          val item = DecoupleSeqItem(s"item $i", TLBReqItem(i, 0, true, true, true))
+          val item = DecoupleSeqItem(s"item $i", TLBReqItem(0, i, true, true, true))
           startItem(item)
           finishItem(item)
         }
@@ -165,6 +169,14 @@ class UVMSmokeTest extends AnyFlatSpec with Matchers {
       override def runPhase(phase: UVMPhase): Unit = {
         phase.raiseObjection(phase)
         val s = new SequenceTest("s")
+        fork {
+          for (i <- 0 to 100) {
+            uvmInfo(getTypeName, s"api test: $i", UVM_NONE)
+            ~>(1)
+          }
+//          finish()
+//          uvmFatal(getTypeName, "api fatal test")
+        }
         s.start(sqr)
         phase.dropObjection(phase)
       }
@@ -174,11 +186,17 @@ class UVMSmokeTest extends AnyFlatSpec with Matchers {
       override def harness(): TLBHarness =
         new TLBHarness
 
+      override def annotations: AnnotationSeq = AnnotationSeq(Seq(
+        TargetDirAnnotation("test_run_dir/TLBTest"),
+        WriteVcdAnnotation)
+      )
+
       override def top: TLBHarness => TLBTest = { c =>
-        new TLBTest("TLBTest", TLBConfig(c.io.req, c.io.req, c.clock))
+        new TLBTest("TLBTest", TLBConfig(c.io.req, c.io.req, c.clk))
       }
     }
 
     uvmRun(new TLBChiter)
+//    ChiterVerilator.run()
   }
 }
