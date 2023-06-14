@@ -16,8 +16,9 @@ package object uvm {
 
   implicit class testableClock(x: Clock) {
     def step(n: Int = 1): Unit = {
+      implicitly[CC].~>(1)
       implicitly[CC].~>(x)
-      0 until n foreach { _ =>
+      1 until n foreach { _ =>
         implicitly[CC].~>(1)
         implicitly[CC].~>(x)
       }

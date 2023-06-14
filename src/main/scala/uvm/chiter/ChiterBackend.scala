@@ -26,7 +26,6 @@ trait ChiterBackend {
       if (i.periodLeft == 0) {
         i.periodLeft = i.period
       }
-      println(s"period left: ${i.periodLeft}, period: ${i.period}")
     }
   }
 
@@ -44,13 +43,12 @@ trait ChiterBackend {
     blockedThreads.update(0, mutable.ListBuffer(mainThread))
 
     try {
-      clocks.foreach(i => poke(i.clk, if (i.periodLeft >= i.period / 2) 0 else 1))
+      clocks.foreach(i => poke(i.clk, if (i.periodLeft >= i.period / 2) 1 else 0))
 
       while (!mainThread.isDone(false)) {
         val timeNow = getTimeNow
         debugLog(s"clock $timeNow")
         updateClocks()
-        println(blockedThreads.keys, blockedThreads.values.map(_.size))
 
         val threads = mutable.ListBuffer.empty[ChiterThread]
         threads ++= blockedThreads.getOrElse(timeNow, Seq())

@@ -94,7 +94,7 @@ class UVMSmokeTest extends AnyFlatSpec with Matchers {
       tlb.clock := clk
       tlb.reset := reset
 
-      clock(clk, 6)
+      clock(clk, 5)
     }
 
     case class TLBReqItem(asid: Int, vpn: Int, passthrough: Boolean, instruction: Boolean, store: Boolean)
