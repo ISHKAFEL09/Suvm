@@ -15,7 +15,7 @@ abstract class DecoupleDriver[T, REQ <: Data](name: String,
     bus.valid.poke(false.B)
     while (true) {
       val item = seqItemPort.getNextItem
-      uvmInfo(getTypeName, s"get item: ${item.name}", UVM_NONE)
+      uvmInfo(getTypeName, s"get item: ${item.name} @ ${time()}", UVM_NONE)
       bus.valid.poke(true.B)
       bus.bits.poke(driver(item.gen))
       clk.step()

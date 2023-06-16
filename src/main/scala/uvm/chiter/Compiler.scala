@@ -14,7 +14,7 @@ import logger.{LogLevelAnnotation, Logger}
 object Compiler {
 
   private val elaboratePhase = new Elaborate
-  def elaborate[M <: RawModule](gen: () => M, annotationSeq: AnnotationSeq): (firrtl.CircuitState, M, AnnotationSeq) = {
+  def elaborate[M <: RawModule](gen: () => M, annotationSeq: AnnotationSeq): (firrtl.CircuitState, M) = {
     // run Builder.build(Module(gen()))
     val genAnno = ChiselGeneratorAnnotation(gen)
     val elaborationAnnos = Logger.makeScope(annotationSeq) { elaboratePhase.transform(genAnno +: annotationSeq) }
@@ -31,7 +31,7 @@ object Compiler {
     // annos to state
     val state = annosToState(converterAnnos)
 
-    (state, dut.asInstanceOf[M], converterAnnos)
+    (state, dut.asInstanceOf[M])
   }
 
   def toLowFirrtl(state: firrtl.CircuitState, annos: AnnotationSeq = List()): firrtl.CircuitState = {

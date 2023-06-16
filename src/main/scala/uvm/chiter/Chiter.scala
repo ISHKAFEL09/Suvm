@@ -93,13 +93,15 @@ trait Chiter[T <: ChiterHarness] {
 
   def top: T => UVMTest
 
+  def compile: Boolean
+
   def annotations: AnnotationSeq = AnnotationSeq(Seq(
     TargetDirAnnotation("test_run_dir"),
     WriteVcdAnnotation)
   )
 
   def run(body: T => Unit): Unit = {
-    build(harness, annotations)
+    build(harness, annotations, compile)
     dut.get.clocks.foreach(addClock)
     backendRun(body)
   }

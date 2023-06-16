@@ -4,6 +4,7 @@ import chisel3._
 import chisel3.reflect.DataMirror
 import firrtl.AnnotationSeq
 import firrtl._
+import firrtl.annotations.NoTargetAnnotation
 import firrtl.transforms._
 
 sealed trait FinishStatus
@@ -11,6 +12,51 @@ object SuccessStatus extends FinishStatus
 object StopStatus extends FinishStatus
 object FatalStatus extends FinishStatus
 object TestFinishedException extends Exception("Test Finished!")
+
+sealed trait VerilatedOption extends NoTargetAnnotation
+case class VerilatorFlags(flags: Seq[String]) extends VerilatedOption
+case class VerilatorCFlags(flags: Seq[String]) extends VerilatedOption
+case class VerilatorLinkFlags(flags: Seq[String]) extends VerilatedOption
+
+private[uvm] case class TopModuleInfo(name: String,
+                                      inputs: Seq[PinInfo],
+                                      outputs: Seq[PinInfo],
+                                      clocks: Seq[PinInfo]) {
+  require(inputs.forall(_.width > 0), s"Inputs need to be at least 1-bit!\n$inputs")
+  require(outputs.forall(_.width > 0), s"Outputs need to be at least 1-bit!\n$outputs")
+  def portNames: Seq[String] = inputs.map(_.name) ++ outputs.map(_.name) ++ clocks.map(_.name)
+  val pokeable: Seq[(PinInfo, Int)] = (inputs ++ clocks).zipWithIndex
+  val peekable: Seq[(PinInfo, Int)] = (inputs ++ outputs ++ clocks).zipWithIndex
+}
+
+private[uvm] case class PinInfo(name: String, width: Int, signed: Boolean) {
+  val mask: BigInt = (BigInt(1) << width) - 1
+}
+
+private[uvm] object TopModuleInfo {
+  def apply(circuit: ir.Circuit): TopModuleInfo = {
+    val main = circuit.modules.find(_.name == circuit.main).get
+
+    def isClockIn(p: ir.Port): Boolean = p.tpe == ir.ClockType && p.direction == ir.Input
+    val (clock, notClock) = main.ports.partition(isClockIn)
+    val (in, out) = notClock.filterNot(p => bitWidth(p.tpe) == 0).partition(_.direction == ir.Input)
+
+    new TopModuleInfo(
+      name = main.name,
+      inputs = in.map(portNameAndWidthAndIsSigned),
+      outputs = out.map(portNameAndWidthAndIsSigned),
+      clocks = clock.map(i => PinInfo(i.name, 1, signed = false))
+    )
+  }
+
+  private def portNameAndWidthAndIsSigned(p: ir.Port): PinInfo = {
+    require(
+      p.tpe.isInstanceOf[ir.GroundType],
+      s"Port ${p.serialize} is not of ground type! Please make sure to provide LowFirrtl to this API!"
+    )
+    PinInfo(p.name, bitWidth(p.tpe).toInt, p.tpe.isInstanceOf[ir.SIntType])
+  }
+}
 
 trait ChiterSimulator {
   var dut: Option[ChiterHarness] = None
@@ -50,11 +96,11 @@ trait ChiterSimulator {
     }.toMap
   }
 
-  def createTester(rtl: CircuitState, annoSeq: AnnotationSeq): Unit
+  def createTester(rtl: CircuitState, needCompile: Boolean): Unit
 
-  def build[T <: ChiterHarness](dutGen: () => T, annotations: AnnotationSeq): Unit = {
+  def build[T <: ChiterHarness](dutGen: () => T, annotations: AnnotationSeq, compile: Boolean = true): Unit = {
     // elaborate the design
-    val (highFirrtl, d, annoSeq) = Compiler.elaborate(dutGen, annotations)
+    val (highFirrtl, d) = Compiler.elaborate(dutGen, annotations)
     dut = Some(d)
 
     val lowFirrtl = Compiler.toLowFirrtl(highFirrtl)
@@ -67,6 +113,6 @@ trait ChiterSimulator {
     val path = pathAnnotations.collect { case c: CombinationalPath => c }
     paths ++= combPathsToData(d, path, ports.toMap)
 
-    createTester(lowFirrtl, annoSeq)
+    createTester(lowFirrtl, compile)
   }
 }

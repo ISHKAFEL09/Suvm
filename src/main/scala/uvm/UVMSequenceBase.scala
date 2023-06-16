@@ -30,7 +30,9 @@ abstract class UVMSequenceBase(name: String) extends UVMSequenceItem(name) {
 
   def finishItem(item: UVMSequenceItem, pri: Int = -1): Unit = {
     val sqr = item.getSequencer
+    uvmInfo(getTypeName, s"begin to send req @ ${implicitly[CC].getTimeNow}", UVM_NONE)
     sqr.sendRequest(this, item)
+    uvmInfo(getTypeName, s"send req done @ ${implicitly[CC].getTimeNow}", UVM_NONE)
     sqr.waitForItemDone(this, -1)
   }
 }

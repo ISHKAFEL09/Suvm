@@ -77,7 +77,9 @@ trait ChiterBackend {
   @annotation.tailrec
   final def doWait(condition: => Boolean): Unit = {
     val currentThread = current.get
+    currentThread.defer = false
     if (!condition) {
+      println(s"${currentThread.name} ${activeThreads.map(i => (i.name, i.defer))}")
       if (activeThreads.exists(!_.defer)) {
         currentThread.defer = true
         activeThreads += currentThread

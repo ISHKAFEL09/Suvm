@@ -182,7 +182,7 @@ class UVMSmokeTest extends AnyFlatSpec with Matchers {
       }
     }
 
-    class TLBChiter extends Chiter[TLBHarness] with TreadleBackend {
+    class TLBChiter extends Chiter[TLBHarness] with VerilatorBackend {
       override def harness(): TLBHarness =
         new TLBHarness
 
@@ -194,6 +194,8 @@ class UVMSmokeTest extends AnyFlatSpec with Matchers {
       override def top: TLBHarness => TLBTest = { c =>
         new TLBTest("TLBTest", TLBConfig(c.io.req, c.io.req, c.clk))
       }
+
+      override def compile: Boolean = false
     }
 
     uvmRun(new TLBChiter)

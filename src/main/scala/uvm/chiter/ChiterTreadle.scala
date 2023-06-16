@@ -1,9 +1,8 @@
 package uvm.chiter
 
 import chisel3._
-import chisel3.reflect.DataMirror
 import firrtl._
-import firrtl.transforms._
+import firrtl.stage._
 import treadle._
 import treadle.stage._
 import uvm._
@@ -33,8 +32,8 @@ trait TreadleSimulator extends ChiterSimulator {
 
   override def simFinish(): Unit = tester.get.finish
 
-  override def createTester(rtl: CircuitState, annoSeq: AnnotationSeq): Unit = {
-    val treadleAnnotations = (new TreadleTesterPhase).transform(annoSeq)
+  override def createTester(rtl: CircuitState, needCompile: Boolean): Unit = {
+    val treadleAnnotations = (new TreadleTesterPhase).transform(FirrtlCircuitAnnotation(rtl.circuit) +: rtl.annotations)
     tester = Some(treadleAnnotations.collectFirst { case TreadleTesterAnnotation(t) => t }.getOrElse(
       throw new Exception(s"TreadleTesterPhase did not build a treadle tester")
     ))

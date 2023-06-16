@@ -265,6 +265,8 @@ package object uvm {
 
   def ~>(clk: Clock): Unit = implicitly[CC].~>(clk)
 
+  def time(): BigInt = implicitly[CC].getTimeNow
+
   def createEvent(name: String): Event = implicitly[CC].createEvent(name)
 
   def getCurrent: ChiterThread = implicitly[CC].getCurrent
