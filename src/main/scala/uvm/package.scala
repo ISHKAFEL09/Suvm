@@ -273,6 +273,9 @@ package object uvm {
 
   def finish(status: FinishStatus = StopStatus): Unit = implicitly[CC].finish(status)
 
-  def debugLog(s: String): Unit =
-    println(s"[DEBUG LOG] $s")
+  def debugLog(s: String): Unit = {
+//    println(s"[DEBUG LOG] $s")
+  }
+
+  logger.Logger.setLevel(logger.LogLevel.Info)
 }

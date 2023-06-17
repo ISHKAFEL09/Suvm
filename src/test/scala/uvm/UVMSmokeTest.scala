@@ -94,7 +94,7 @@ class UVMSmokeTest extends AnyFlatSpec with Matchers {
       tlb.clock := clk
       tlb.reset := reset
 
-      clock(clk, 5)
+      clock(clk, 10)
     }
 
     case class TLBReqItem(asid: Int, vpn: Int, passthrough: Boolean, instruction: Boolean, store: Boolean)
@@ -140,7 +140,7 @@ class UVMSmokeTest extends AnyFlatSpec with Matchers {
 
     class SequenceTest(name: String) extends UVMSequenceBase(name) {
       override def body(): Unit = {
-        0 to 30 foreach { i =>
+        0 to 3000 foreach { i =>
           val item = DecoupleSeqItem(s"item $i", TLBReqItem(0, i, true, true, true))
           startItem(item)
           finishItem(item)
@@ -188,17 +188,19 @@ class UVMSmokeTest extends AnyFlatSpec with Matchers {
 
       override def annotations: AnnotationSeq = AnnotationSeq(Seq(
         TargetDirAnnotation("test_run_dir/TLBTest"),
-        WriteVcdAnnotation)
+        WriteVcdAnnotation,
+        VerilatorFlags(Seq("--timescale", "1ns/1ns")))
       )
 
       override def top: TLBHarness => TLBTest = { c =>
         new TLBTest("TLBTest", TLBConfig(c.io.req, c.io.req, c.clk))
       }
-
-      override def compile: Boolean = false
     }
 
-    uvmRun(new TLBChiter)
+    uvmRun(new TLBChiter {
+//      override def compile: Boolean = false
+      override def compile: Boolean = false
+    })
 //    ChiterVerilator.run()
   }
 }

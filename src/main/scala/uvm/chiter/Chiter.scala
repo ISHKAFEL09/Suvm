@@ -20,8 +20,6 @@ trait ChiterThread {
   def children: collection.mutable.ListBuffer[ChiterThread]
 
   val waiting: Semaphore = new Semaphore(0)
-
-  var defer: Boolean = false
 }
 
 trait ChiterThreadList {
@@ -93,7 +91,7 @@ trait Chiter[T <: ChiterHarness] {
 
   def top: T => UVMTest
 
-  def compile: Boolean
+  def compile: Boolean = true
 
   def annotations: AnnotationSeq = AnnotationSeq(Seq(
     TargetDirAnnotation("test_run_dir"),
@@ -134,6 +132,7 @@ trait Chiter[T <: ChiterHarness] {
 
   def finish(status: FinishStatus): Unit = {
     ~>(0)
+    val t = getTimeNow
     simFinish()
     status match {
       case SuccessStatus =>
@@ -142,6 +141,6 @@ trait Chiter[T <: ChiterHarness] {
       case FatalStatus =>
         assert(cond = false, "Fatal!!!")
     }
-    throw TestFinishedException
+    throw TestFinishedException(t)
   }
 }

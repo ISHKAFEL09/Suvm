@@ -21,9 +21,7 @@ class UVMSequencer[REQ <: UVMSequenceItem, RSP](name: String, parent: Option[UVM
 
     sequenceItemRequested = true
     getNextItemCalled = true
-    uvmInfo(getTypeName, s"waiting item @ ${time()}", UVM_NONE)
     ~>(reqQueue.nonEmpty)
-    uvmInfo(getTypeName, s"waiting item done @ ${time()}", UVM_NONE)
     reqQueue.head
   }
 
@@ -42,6 +40,5 @@ class UVMSequencer[REQ <: UVMSequenceItem, RSP](name: String, parent: Option[UVM
   override def sendRequest[T <: UVMSequenceItem](seq: UVMSequenceBase, t: T): Unit = {
     t.setSequenceID(seq.mGetSqrSequenceID(mSequencerID, update = true))
     reqQueue.enqueue(t.asInstanceOf[REQ])
-    uvmInfo(getTypeName, s"reqQueue empty: ${reqQueue.isEmpty} @${time()}", UVM_NONE)
   }
 }

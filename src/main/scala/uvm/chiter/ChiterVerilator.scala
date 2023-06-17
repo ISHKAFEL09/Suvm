@@ -54,7 +54,6 @@ trait VerilatorSimulator extends ChiterSimulator {
       ))) & mask64
       value = value | (w << (i * 64))
     }
-    println(s"peek signal $signal, value: $value")
     if (pin.signed)
       -(((~value) + 1) & ((BigInt(1) << pin.width) - 1))
     else
@@ -155,7 +154,6 @@ trait VerilatorSimulator extends ChiterSimulator {
 
   private def osRun(cmd: Seq[String], cwd: os.Path): os.CommandResult = {
     // print the command and pipe the output to stdout
-    println(cmd.mkString(" "))
     os.proc(cmd)
       .call(cwd = cwd, stdout = os.ProcessOutput.Readlines(println), stderr = os.ProcessOutput.Readlines(println))
   }
@@ -218,6 +216,8 @@ trait VerilatorSimulator extends ChiterSimulator {
   override def createTester(rtl: CircuitState, needCompile: Boolean): Unit = {
     val targetDir = Compiler.requireTargetDir(rtl.annotations)
     _top = Some(TopModuleInfo(rtl.circuit))
+    logger.Logger.setOutput((targetDir / "run.log").toString)
+    println(s"Log written to file: ${targetDir / "run.log"}")
 
     val opts = new java.util.HashMap[String, Int]()
     opts.put(Library.OPTION_OPEN_FLAGS, 2)

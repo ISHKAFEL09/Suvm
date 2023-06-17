@@ -11,7 +11,7 @@ sealed trait FinishStatus
 object SuccessStatus extends FinishStatus
 object StopStatus extends FinishStatus
 object FatalStatus extends FinishStatus
-object TestFinishedException extends Exception("Test Finished!")
+case class TestFinishedException(t: BigInt) extends Exception("Test Finished!")
 
 sealed trait VerilatedOption extends NoTargetAnnotation
 case class VerilatorFlags(flags: Seq[String]) extends VerilatedOption

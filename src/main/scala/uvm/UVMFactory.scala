@@ -36,7 +36,7 @@ class UVMDefaultFactory extends UVMFactory {
 
   override def register[T <: UVMObject](obj: UVMObjectWrapper[T]): Unit = {
     name2wrapper(className(obj.getTypeName)) = obj
-    uvmInfo("Factory", s"Register ${className(obj.getTypeName)}", UVM_NONE)
+    uvmInfo("Factory", s"Register ${className(obj.getTypeName)}", UVM_DEBUG)
     // TODO: overrides
   }
 

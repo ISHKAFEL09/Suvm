@@ -19,7 +19,9 @@ lazy val root = (project in file("."))
       "edu.berkeley.cs" %% "firrtl" % firrtlVersion,
       "org.scalatest" %% "scalatest" % "3.2.15",
       "net.java.dev.jna" % "jna" % "5.13.0",
-      "org.scalatra.scalate" %% "scalate-core" % "1.9.8"
+      "org.scalatra.scalate" %% "scalate-core" % "1.9.8",
+      "com.typesafe.scala-logging" %% "scala-logging" % "3.9.5",
+      "ch.qos.logback" % "logback-classic" % "1.4.7"
     ),
     scalacOptions ++= Seq(
       "-language:reflectiveCalls",

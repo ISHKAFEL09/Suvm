@@ -103,7 +103,7 @@ extern "C" {
         const uint64_t u = value;
         WData* data = nullptr;
         size_t words = 0;
-        std::cout << "poke" << id << "(" << data << ")" << " to " << u << std::endl;
+        //std::cout << "poke" << id << "(" << data << ")" << " to " << u << std::endl;
         switch(id) {
             {{&pokeSwitches}}
             default:
@@ -135,7 +135,7 @@ extern "C" {
                 return -1;
         }
         const size_t pos = offset * 2;
-        std::cout << "peek" << id << "(" << data << ")" << std::endl;
+        //std::cout << "peek" << id << "(" << data << ")" << std::endl;
         if (pos >= words || pos < 0) {
             std::cerr << "Out of bounds index for id = " << id << " index = " << offset << std::endl;
             finish(s);

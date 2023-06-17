@@ -10,8 +10,10 @@ trait ChiterThreadBackend {
   val allThreads: mutable.ArrayBuffer[ChiterThread] = mutable.ArrayBuffer.empty[ChiterThread]
   val joinedThreads = mutable.HashMap.empty[ChiterThread, Seq[ChiterThread]]
   val activeThreads: mutable.ListBuffer[ChiterThread] = mutable.ListBuffer.empty[ChiterThread]
+  val deferThreads: mutable.ListBuffer[ChiterThread] = mutable.ListBuffer.empty[ChiterThread]
   val zombieThreads: mutable.ListBuffer[ChiterThread] = mutable.ListBuffer.empty[ChiterThread]
   val clocks: mutable.ListBuffer[ClockInfo] = mutable.ListBuffer.empty[ClockInfo]
+  protected var deferSize: Int = 0
 
   def addClock(clk: ClockInfo): Unit = clocks += clk
 
@@ -25,6 +27,8 @@ trait ChiterThreadBackend {
 }
 
 trait ChiterMultiThreadBackend extends ChiterThreadBackend {
+  this: ChiterSimulator =>
+
   private val interruptedException = new ConcurrentLinkedQueue[Throwable]()
 
   private def onException(e: Throwable): Unit = interruptedException.offer(e)
@@ -91,8 +95,20 @@ trait ChiterMultiThreadBackend extends ChiterThreadBackend {
   @annotation.tailrec
   final def scheduler(): Unit = {
     if (activeThreads.isEmpty) {
-      current = None
-      mainSemaphore.release()
+      if (deferSize != deferThreads.size) {
+        deferSize = deferThreads.size
+        activeThreads.addAll(deferThreads)
+        deferThreads.clear()
+        scheduler()
+      } else {
+        deferSize = 0
+        deferThreads.foreach { i =>
+          blockedThreads.getOrElseUpdate(getTimeNow + 1, mutable.ListBuffer.empty[ChiterThread]) += i
+        }
+        deferThreads.clear()
+        current = None
+        mainSemaphore.release()
+      }
     } else {
       val nextThread = activeThreads.remove(0).asInstanceOf[TesterThread]
       if (!nextThread.killFlag) {

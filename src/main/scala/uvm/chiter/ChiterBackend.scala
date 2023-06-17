@@ -1,19 +1,27 @@
 package uvm.chiter
 
 import uvm._
+
+import java.util.Calendar
 import scala.collection.mutable
 
 trait ChiterBackend {
   this: ChiterThreadBackend with ChiterSimulator =>
 
+  private def timeDuration(start: BigInt): BigInt = {
+    val end = Calendar.getInstance().getTimeInMillis
+    (end - start) / 1000
+  }
+
   def backendRun[T <: ChiterHarness](fn: T => Unit): Unit = {
+    val start = Calendar.getInstance().getTimeInMillis
     try {
       mainThreadStart(fn)
+      println(s"Test Finished @$getTimeNow in ${timeDuration(start)}s!")
     } catch {
-      case TestFinishedException =>
+      case TestFinishedException(t) =>
+        println(s"Test Finished @$t in ${timeDuration(start)}s!")
       case e@(_: Exception | _: Error) => throw e
-    } finally {
-      println(s"Test Finished @$getTimeNow!")
     }
   }
 
@@ -43,7 +51,7 @@ trait ChiterBackend {
     blockedThreads.update(0, mutable.ListBuffer(mainThread))
 
     try {
-      clocks.foreach(i => poke(i.clk, if (i.periodLeft >= i.period / 2) 1 else 0))
+      clocks.foreach(i => poke(i.clk, if (i.periodLeft > i.period / 2) 1 else 0))
 
       while (!mainThread.isDone(false)) {
         val timeNow = getTimeNow
@@ -77,19 +85,13 @@ trait ChiterBackend {
   @annotation.tailrec
   final def doWait(condition: => Boolean): Unit = {
     val currentThread = current.get
-    currentThread.defer = false
     if (!condition) {
-      println(s"${currentThread.name} ${activeThreads.map(i => (i.name, i.defer))}")
-      if (activeThreads.exists(!_.defer)) {
-        currentThread.defer = true
-        activeThreads += currentThread
-        scheduler()
-        currentThread.waiting.acquire()
-      } else {
-        currentThread.defer = false
-        doWait(1)
-      }
+      deferThreads += currentThread
+      scheduler()
+      currentThread.waiting.acquire()
       doWait(condition)
+    } else {
+      deferSize = -1
     }
   }
 
