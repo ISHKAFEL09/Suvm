@@ -114,13 +114,15 @@ trait Chiter[T <: ChiterHarness] {
     ~>(0)
   }
 
-  def ~>(clk: Clock): Unit = {
+  def ~>(clk: Clock, posedge: Boolean): Unit = {
     clocks.find(_.clk == clk) match {
       case Some(clkInfo) =>
-        ~>(clkInfo.periodLeft == clkInfo.period)
+        if (posedge)
+          ~>(clkInfo.periodLeft == clkInfo.period)
+        else
+          ~>(clkInfo.periodLeft == (clkInfo.period / 2))
       case None =>
-        ~>(peek(clk) == 0)
-        ~>(peek(clk) == 1)
+        uvmFatal("CHITER", s"Register clock ${clk.name} with clock() first!")
     }
   }
 

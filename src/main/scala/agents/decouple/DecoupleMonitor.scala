@@ -4,22 +4,23 @@ import chisel3._
 import chisel3.util._
 import uvm._
 
-abstract class DecoupleMonitor[REQ, T <: Data](name: String,
-                                            parent: Option[UVMComponent],
-                                            val bus: DecoupledIO[T])(implicit clk: Clock)
+abstract class DecoupleMonitor[REQ <: UVMSequenceItem, T <: Data](name: String,
+                                                                  parent: Option[UVMComponent],
+                                                                  clk: Clock,
+                                                                  val bus: DecoupleIF[T])
   extends UVMMonitor(name, parent) {
 
-  val ap = new UVMAnalysisImp[DecoupleSeqItem[REQ]]("ap", write)
+  val ap = new UVMAnalysisImp[REQ]("ap", write)
 
-  def monitor(): DecoupleSeqItem[REQ]
+  def monitor(): REQ
 
-  def write(t: DecoupleSeqItem[REQ]): Unit
+  def write(t: REQ): Unit
 
   override def runPhase(phase: UVMPhase): Unit = {
     while (true) {
-      clk.step()
+      clk.step(posedge = false)
       while (!bus.ready.peek().litToBoolean || !bus.valid.peek().litToBoolean)
-        clk.step()
+        clk.step(posedge = false)
       ap.write(monitor())
     }
   }

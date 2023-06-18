@@ -84,9 +84,9 @@ extern "C" {
         sim_state* ss = (sim_state*)s;
         for (int32_t i = 0; i < cycles; i++) {
             int64_t j = (int64_t)(i + 1);
-            ss->contextp->timeInc(1);
             ss->dut->eval();
             ss->tfp->dump(ss->contextp->time());
+            ss->contextp->timeInc(1);
             if (stopTrig) {
                 return (((int64_t)2) << 32) | j;
             } else if (finishTrig) {

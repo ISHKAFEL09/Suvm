@@ -15,12 +15,12 @@ package object uvm {
   implicit lazy val ct: CC = uvmChiter.get
 
   implicit class testableClock(x: Clock) {
-    def step(n: Int = 1): Unit = {
+    def step(n: Int = 1, posedge: Boolean = true): Unit = {
       implicitly[CC].~>(1)
-      implicitly[CC].~>(x)
+      implicitly[CC].~>(x, posedge)
       1 until n foreach { _ =>
         implicitly[CC].~>(1)
-        implicitly[CC].~>(x)
+        implicitly[CC].~>(x, posedge)
       }
     }
   }
@@ -262,8 +262,6 @@ package object uvm {
   def ~>(cycles: Int): Unit = implicitly[CC].~>(cycles)
 
   def ~>(event: Event): Unit = implicitly[CC].~>(event)
-
-  def ~>(clk: Clock): Unit = implicitly[CC].~>(clk)
 
   def time(): BigInt = implicitly[CC].getTimeNow
 

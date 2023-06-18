@@ -8,9 +8,9 @@ import scala.collection.mutable
 trait ChiterBackend {
   this: ChiterThreadBackend with ChiterSimulator =>
 
-  private def timeDuration(start: BigInt): BigInt = {
+  private def timeDuration(start: BigInt): Float = {
     val end = Calendar.getInstance().getTimeInMillis
-    (end - start) / 1000
+    (end - start).toFloat / 1000.0F
   }
 
   def backendRun[T <: ChiterHarness](fn: T => Unit): Unit = {

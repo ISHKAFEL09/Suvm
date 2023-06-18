@@ -32,7 +32,7 @@ class UVMDefaultReportServer(name: String = "UVMDefaultReportServer")
   override def composeReportMessage(reportMessage: UVMReportMessage, reportObjName: String): String = {
     // TODO:
     val objName = if (reportObjName == "") reportMessage.rh.get.getFullName else reportObjName
-    s"${reportMessage.severity}(${reportMessage.verbosity}) ${reportMessage.trace}: $objName" +
+    s"${reportMessage.severity}(${reportMessage.verbosity}) ${reportMessage.trace}@${time()}: $objName" +
       s"[${reportMessage.idx}] ${reportMessage.msg}"
   }
 
@@ -41,7 +41,7 @@ class UVMDefaultReportServer(name: String = "UVMDefaultReportServer")
     if (reportMessage.action.get.contains(UVM_DISPLAY)) {
       import ENUM_UVM_SEVERITY._
       reportMessage.severity match {
-        case UVM_INFO => println(s"${Console.GREEN}$msg${Console.RESET}")
+        case UVM_INFO => println(s"$msg")
         case UVM_WARNING | UVM_ERROR | UVM_FATAL => println(s"${Console.RED}$msg${Console.RESET}")
       }
       logger.info(msg)

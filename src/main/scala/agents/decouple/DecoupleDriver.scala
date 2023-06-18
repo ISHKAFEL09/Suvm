@@ -4,10 +4,11 @@ import chisel3._
 import chisel3.util._
 import uvm._
 
-abstract class DecoupleDriver[T, REQ <: Data](name: String,
-                                  parent: Option[UVMComponent],
-                                  val bus: DecoupledIO[REQ])(implicit clk: Clock)
-  extends UVMDriver[DecoupleSeqItem[T], DecoupleSeqItem[T]](name, parent) {
+abstract class DecoupleDriver[T <: UVMSequenceItem, REQ <: Data](name: String,
+                                              parent: Option[UVMComponent],
+                                              clk: Clock,
+                                              val bus: DecoupleIF[REQ])
+  extends UVMDriver[T, T](name, parent) {
 
   def driver(t: T): REQ
 
@@ -15,15 +16,13 @@ abstract class DecoupleDriver[T, REQ <: Data](name: String,
     bus.valid.poke(false.B)
     while (true) {
       val item = seqItemPort.getNextItem
-      uvmInfo(getTypeName, s"get item: ${item.name} @ ${time()}", UVM_NONE)
       bus.valid.poke(true.B)
-      bus.bits.poke(driver(item.gen))
+      bus.bits.poke(driver(item))
       clk.step()
       while (!bus.ready.peek().litToBoolean)
         clk.step()
       bus.valid.poke(false.B)
       seqItemPort.itemDone()
-      uvmInfo(getTypeName, s"item: ${item.name} done", UVM_NONE)
     }
   }
 }
