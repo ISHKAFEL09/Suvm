@@ -57,6 +57,7 @@ trait ChiterBackend {
         val timeNow = getTimeNow
         debugLog(s"clock $timeNow")
         updateClocks()
+        update()
 
         val threads = mutable.ListBuffer.empty[ChiterThread]
         threads ++= blockedThreads.getOrElse(timeNow, Seq())
@@ -72,6 +73,8 @@ trait ChiterBackend {
         }
         zombieThreads.clear()
         step(1)
+        if (timeout != 0 && getTimeNow > timeout)
+          uvmFatal("CHITER", s"simulation time expire @$timeout")
       }
     } finally {
       allThreads.foreach { i =>

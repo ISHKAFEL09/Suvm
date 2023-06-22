@@ -62,7 +62,6 @@ trait VerilatorSimulator extends ChiterSimulator {
 
   override def step(n: Int): Unit = {
     assert(isRunning)
-    update()
     val ret = takeSteps(n)
     val status = (ret >> 32) & 3
     if (status != 0)
@@ -85,7 +84,7 @@ trait VerilatorSimulator extends ChiterSimulator {
   lazy val getTimeFunc: Function = so.getFunction("get_time")
   lazy val finishFunc: Function = so.getFunction("finish")
 
-  private def update(): Unit = {
+  override def update(): Unit = {
     assert(isRunning)
     updateFunc.invokeVoid(Array(simState))
   }

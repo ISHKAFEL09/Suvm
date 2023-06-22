@@ -9,6 +9,7 @@ import rocket2.config._
 import uvm._
 import uvm.chiter._
 import agents.tlbreq._
+import rocket2.agents.ptwslave._
 
 class TLBSmokeTest extends AnyFlatSpec with Matchers {
   behavior of "TLBSmokeTest"
@@ -30,33 +31,42 @@ class TLBSmokeTest extends AnyFlatSpec with Matchers {
       tlb.clock := clk
       tlb.reset := reset
 
-      clock(clk, 5)
+      clock(clk, 100)
+
+      tlb.io.ptw.status.mPrv := 0.U
+      tlb.io.ptw.status.vm := 1.U << 3
     }
 
     class TLBReqSmokeSeq(name: String) extends UVMSequenceBase(name) {
       override def body(): Unit = {
-        0 to 3000 foreach { i =>
-          val item = TLBReqItem(s"tlb_req_item_$i", 0, i, passthrough = true, instruction = true, store = true)
+        0 to 100 foreach { i =>
+          val item = TLBReqItem(s"tlb_req_item_$i", 0, i / 2, passthrough = true, instruction = true, store = true)
           startItem(item)
           finishItem(item)
         }
       }
     }
 
-    class TLBSmokeTest(name: String, cfg: TLBReqAgentConfig) extends UVMTest(name, None) {
+    case class TLBTestConfig(ptwSlvCfg: PTWSlaveAgentConfig, tlbReqCfg: TLBReqAgentConfig)
+
+    class TLBSmokeTest(name: String, cfg: TLBTestConfig) extends UVMTest(name, None) {
       var tlbReqAgent: Option[TLBReqAgent] = None
+      var ptwSlaveAgent: Option[PTWSlaveAgent] = None
 
       def tlbReqSqr: TLBReqSequencer = tlbReqAgent.get.sqr.get
 
       override def buildPhase(phase: UVMPhase): Unit = {
         tlbReqAgent = Some(create("tlbReqAgent", this) { case (s, p) =>
-          new TLBReqAgent(s, p, cfg)
+          new TLBReqAgent(s, p, cfg.tlbReqCfg)
+        })
+
+        ptwSlaveAgent = Some(create("ptwSlaveAgent", this) { case (s, p) =>
+          new PTWSlaveAgent(s, p, cfg.ptwSlvCfg)
         })
       }
 
       override def runPhase(phase: UVMPhase): Unit = {
         phase.raiseObjection(phase)
-        cfg.driverIF.clk.step(3)
         val s = new TLBReqSmokeSeq("mTLBReqSmokeSeq")
         s.start(tlbReqSqr)
         phase.dropObjection(phase)
@@ -69,23 +79,30 @@ class TLBSmokeTest extends AnyFlatSpec with Matchers {
 
       override def annotations: AnnotationSeq = AnnotationSeq(Seq(
         TargetDirAnnotation("test_run_dir/TLBSmokeTest"),
-        VerilatorFlags(Seq("--timescale", "1ns/1ns")))
+//        TimeoutValue(1000),
+        VerilatorFlags(Seq("--timescale", "1ns/100ps")))
       )
 
       override def top: TLBHarness => TLBSmokeTest = { c =>
+        val tlbReqCfg = TLBReqAgentConfig(
+          TLBReqIF(c.clk, c.io.req),
+          TLBReqIF(c.clk, c.io.req)
+        )
+
+        val ptwSlvCfg = PTWSlaveAgentConfig(PTWSlaveIF(
+          c.clk, c.io.ptw
+        ))
+
         new TLBSmokeTest(
           "TLBSmokeTest",
-          TLBReqAgentConfig(
-            TLBReqIF(c.clk, c.io.req),
-            TLBReqIF(c.clk, c.io.req)
-          )
+          TLBTestConfig(ptwSlvCfg, tlbReqCfg)
         )
       }
     }
 
     uvmRun(new TLBChiter {
-//      override def compile: Boolean = true
-      override def compile: Boolean = false
+      override def compile: Boolean = true
+//      override def compile: Boolean = false
     })
   }
 }

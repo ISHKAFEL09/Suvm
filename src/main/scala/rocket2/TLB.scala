@@ -1,6 +1,5 @@
 package rocket2
 
-import circt.stage.ChiselStage
 import chisel3._
 import chisel3.util._
 import rocket2.PRV._
@@ -64,7 +63,7 @@ class PLRU(n: Int) {
   def replace: UInt = {
     var idx = 1.U(1.W)
     for (_ <- 0 until log2Up(n)) {
-      idx = Cat(idx, state(idx)) // idx = idx * 2 + {0, 1}
+      idx = Cat(idx, state(idx.pad(5))) // idx = idx * 2 + {0, 1}
     }
     idx(log2Up(n) - 1, 0)
   }
@@ -115,6 +114,7 @@ class TLB(implicit p: Parameters) extends TLBModule {
 
   // cam & ram
   val plru = new PLRU(entries)
+  plru.state.suggestName("plruState")
   val tagCam = Module(new TLBCam)
   val ppnRam = Mem(entries, UInt(ppnBits.W))
   val ppnFlags = RegInit(0.U.asTypeOf(Vec(entries, new TLBEntry)))

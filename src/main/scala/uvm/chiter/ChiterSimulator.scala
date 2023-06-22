@@ -18,6 +18,8 @@ case class VerilatorFlags(flags: Seq[String]) extends VerilatedOption
 case class VerilatorCFlags(flags: Seq[String]) extends VerilatedOption
 case class VerilatorLinkFlags(flags: Seq[String]) extends VerilatedOption
 
+case class TimeoutValue(value: BigInt) extends NoTargetAnnotation
+
 private[uvm] case class TopModuleInfo(name: String,
                                       inputs: Seq[PinInfo],
                                       outputs: Seq[PinInfo],
@@ -62,6 +64,7 @@ trait ChiterSimulator {
   var dut: Option[ChiterHarness] = None
   val ports = collection.mutable.Map.empty[Data, String]
   val paths = collection.mutable.Map.empty[Data, Set[Data]]
+  var timeout: BigInt = 0
 
   def getTimeNow: BigInt
 
@@ -70,6 +73,8 @@ trait ChiterSimulator {
   def peek(signal: Data): BigInt
 
   def step(n: Int): Unit
+
+  def update(): Unit = {}
 
   def simFinish(): Unit
 
@@ -102,6 +107,8 @@ trait ChiterSimulator {
     // elaborate the design
     val (highFirrtl, d) = Compiler.elaborate(dutGen, annotations)
     dut = Some(d)
+
+    timeout = highFirrtl.annotations.collectFirst { case TimeoutValue(t) => t }.getOrElse(0)
 
     val lowFirrtl = Compiler.toLowFirrtl(highFirrtl)
     ports ++= DataMirror.modulePorts(d).flatMap { case (name, data) =>

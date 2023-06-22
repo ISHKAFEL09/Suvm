@@ -133,7 +133,6 @@ trait Chiter[T <: ChiterHarness] {
   def getCurrent: ChiterThread = current.get
 
   def finish(status: FinishStatus): Unit = {
-    ~>(0)
     val t = getTimeNow
     simFinish()
     status match {
