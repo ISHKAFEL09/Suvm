@@ -1,33 +1,25 @@
 name := "uvm"
 
-ThisBuild / scalaVersion     := "2.13.8"
+ThisBuild / scalaVersion     := "2.13.10"
 ThisBuild / version          := "0.1.0"
 ThisBuild / organization     := "%ORGANIZATION%"
 
-val chiselVersion = "3.6.0-RC2"
-val treadleVersion = "1.6.0-RC2"
-val chiseltestVersion = "0.6.0-RC2"
-val firrtlVersion = "1.6.0-RC2"
+val spinalVersion = "1.9.0"
+val spinalCore = "com.github.spinalhdl" %% "spinalhdl-core" % spinalVersion
+val spinalLib = "com.github.spinalhdl" %% "spinalhdl-lib" % spinalVersion
+val spinalIdslPlugin = compilerPlugin("com.github.spinalhdl" %% "spinalhdl-idsl-plugin" % spinalVersion)
+val scalatest = "org.scalatest" %% "scalatest" % "3.2.15"
 
-lazy val root = (project in file("."))
+lazy val projectname = (project in file("."))
   .settings(
-    name := "%NAME%",
     libraryDependencies ++= Seq(
-      "edu.berkeley.cs" %% "chisel3" % chiselVersion,
-      //      "edu.berkeley.cs" %% "chiseltest" % chiseltestVersion,
-      "edu.berkeley.cs" %% "treadle" % treadleVersion,
-      "edu.berkeley.cs" %% "firrtl" % firrtlVersion,
-      "org.scalatest" %% "scalatest" % "3.2.15",
-      "net.java.dev.jna" % "jna" % "5.13.0",
-      "org.scalatra.scalate" %% "scalate-core" % "1.9.8",
-      "com.typesafe.scala-logging" %% "scala-logging" % "3.9.5",
-      "ch.qos.logback" % "logback-classic" % "1.4.7"
+      spinalCore, spinalLib, spinalIdslPlugin, scalatest,
     ),
     scalacOptions ++= Seq(
       "-language:reflectiveCalls",
       "-deprecation",
       "-feature",
-      "-Xcheckinit",
+      "-language:implicitConversions",
+      "-language:postfixOps",
     ),
-    addCompilerPlugin("edu.berkeley.cs" % "chisel3-plugin" % chiselVersion cross CrossVersion.full),
   )

@@ -1,6 +1,7 @@
 package uvm
 
-import chiter._
+
+import spinal.sim.SimThread
 import uvm.UVMSequencerBase.requestID
 
 object ENUM_SEQ_REQ extends Enumeration {
@@ -11,7 +12,7 @@ case class UVMSequenceReq(grant: Boolean,
                           seqID: Int,
                           reqID: Int,
                           pri: Int,
-                          thread: ChiterThread,
+                          thread: SimThread,
                           request: ENUM_SEQ_REQ.Value,
                           seq: UVMSequenceBase)
 

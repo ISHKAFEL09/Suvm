@@ -1,6 +1,7 @@
 package rocket2
 
 import chisel3._
+import chisel3.experimental.FlatIO
 import chisel3.util._
 import rocket2.PRV._
 import rocket2.config._
@@ -98,7 +99,7 @@ class TLBEntry(implicit p: Parameters) extends TLBBundle {
 }
 
 class TLB(implicit p: Parameters) extends TLBModule {
-  val io = IO(new Bundle {
+  val io = FlatIO(new Bundle {
     val req = Flipped(DecoupledIO(new TLBReq))
     val resp = new TLBResp
     val ptw = new TLB2PTWIO

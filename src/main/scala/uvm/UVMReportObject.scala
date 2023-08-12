@@ -1,7 +1,7 @@
 package uvm
 
 import ENUM_UVM_VERBOSITY._
-import chiter._
+
 
 class UVMReportObject(name: String = "") extends UVMObject(name) {
   protected lazy val mReportHandler: UVMReportHandler = create(getName) { s => new UVMReportHandler(s) }

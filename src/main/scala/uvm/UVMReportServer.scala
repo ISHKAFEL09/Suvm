@@ -1,7 +1,6 @@
 package uvm
 
 import ENUM_UVM_ACTION._
-import logger.LazyLogging
 
 abstract class UVMReportServer(name: String = "UVMReportServer") extends UVMObject(name) {
   def processReportMessage(reportMessage: UVMReportMessage): Unit
@@ -11,8 +10,7 @@ abstract class UVMReportServer(name: String = "UVMReportServer") extends UVMObje
   def executeReportMessage(reportMessage: UVMReportMessage, msg: String): Unit
 }
 
-class UVMDefaultReportServer(name: String = "UVMDefaultReportServer")
-  extends UVMReportServer(name) with LazyLogging {
+class UVMDefaultReportServer(name: String = "UVMDefaultReportServer") extends UVMReportServer(name) {
   override def processReportMessage(reportMessage: UVMReportMessage): Unit = {
     val report: Boolean =
       if (reportMessage.action.get == Seq(UVM_NO_ACTION)) false else true
@@ -44,7 +42,6 @@ class UVMDefaultReportServer(name: String = "UVMDefaultReportServer")
         case UVM_INFO => println(s"$msg")
         case UVM_WARNING | UVM_ERROR | UVM_FATAL => println(s"${Console.RED}$msg${Console.RESET}")
       }
-      logger.info(msg)
     }
 
     if (reportMessage.action.get.contains(UVM_STOP))

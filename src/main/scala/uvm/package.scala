@@ -1,62 +1,10 @@
 import scala.language.implicitConversions
 import scala.reflect.ClassTag
-import uvm.chiter._
-import chisel3._
-import chisel3.reflect.DataMirror
+import spinal.core._
+import spinal.core.sim._
+import spinal.sim._
 
 package object uvm {
-  private[uvm] type CC = Chiter[ChiterHarness] with ChiterSimulator
-
-  private var uvmChiter: Option[CC] = None
-
-  private def setChiter[T <: ChiterHarness](c: Chiter[T]): Unit =
-    uvmChiter = Some(c.asInstanceOf[CC])
-
-  implicit lazy val ct: CC = uvmChiter.get
-
-  implicit class testableClock(x: Clock) {
-    def step(n: Int = 1, posedge: Boolean = true): Unit = {
-      implicitly[CC].~>(1)
-      implicitly[CC].~>(x, posedge)
-      1 until n foreach { _ =>
-        implicitly[CC].~>(1)
-        implicitly[CC].~>(x, posedge)
-      }
-    }
-  }
-
-  implicit class testableData[T <: Data](x: T) {
-    def pokeBits(signal: Bits, value: BigInt): Unit = {
-      if (DataMirror.directionOf(signal) != ActualDirection.Input) {
-        throw new Exception("Can only poke inputs")
-      }
-      implicitly[CC].poke(signal, value)
-    }
-
-    def poke(value: T): Unit = (x, value) match {
-      case (x: Bool, value: Bool) => pokeBits(x, value.litValue)
-      case (x: Bits, value: UInt) => pokeBits(x, value.litValue)
-      case (x: SInt, value: SInt) => pokeBits(x, value.litValue)
-      case (x: Bundle, value: Bundle) => x.elements zip value.elements foreach {
-        case ((_, x), (_, value)) => x.poke(value)
-      }
-      case x => throw new Exception(s"don't know how to poke $x")
-    }
-
-    def peekBits(stale: Boolean): T = x match {
-      case x: Bool => implicitly[CC].peek(x) match {
-        case x: BigInt if x == 0 => false.B.asInstanceOf[T]
-        case x: BigInt if x == 1 => true.B.asInstanceOf[T]
-        case x => throw new Exception(s"peeked Bool with value $x not 0 or 1")
-      }
-      case x: UInt => implicitly[CC].peek(x).asUInt(x.getWidth.W).asInstanceOf[T]
-      case x: SInt => implicitly[CC].peek(x).asSInt(x.getWidth.W).asInstanceOf[T]
-      case x => throw new Exception(s"don't know how to peek $x")
-    }
-
-    def peek(): T = peekBits(false)
-  }
-  
   // private, for uvm
   private[uvm] def getTrace(level: Int = 2): String = {
     new Throwable().getStackTrace()(level).toString
@@ -227,21 +175,24 @@ package object uvm {
     }
   }
 
-  private def uvmRunTest[T <: UVMTest : ClassTag](tc: => T): Unit = {
-    val uvmTestTop = create("uvmTestTop", top) { case (_, _) => tc }
-    val runner = implicitly[CC].fork(s"${uvmTestTop.getName}") {
-      UVMPhase.mRunPhases()
-    }
-    implicitly[CC].~>(0)
-    implicitly[CC].~>(top.mPhaseAllDone)
-    runner.kill()
-    implicitly[CC].finish(SuccessStatus)
+  trait HarnessBase extends Component {
+    def init(): Unit
   }
 
-  def uvmRun[T <: ChiterHarness](c: Chiter[T]): Unit = {
-    setChiter(c)
-    implicitly[CC].run { dut =>
-      uvmRunTest(c.top(dut.asInstanceOf[T]))
+  def uvmRun[T <: UVMTest : ClassTag, H <: HarnessBase](harness: => H,
+                                                        simCfg: SpinalSimConfig = SpinalSimConfig().withWave)(tc: H => T): Unit = {
+    val tcName = implicitly[ClassTag[T]].runtimeClass.getPureName
+    val cmp = simCfg.compile(harness)
+    cmp.doSim(tcName) { h =>
+      h.init()
+      create(tcName, top) { case (_, _) => tc(h) }
+      val runner = fork(tcName) {
+        UVMPhase.mRunPhases()
+      }
+      ~>(0)
+      ~>(top.mPhaseAllDone)
+      runner.terminate()
+      finish(SuccessStatus)
     }
   }
 
@@ -251,29 +202,47 @@ package object uvm {
     forkID
   }
 
-  def fork(name: String = "thread")(runnable: => Unit): ChiterThreadList =
-    implicitly[CC].fork(name)(runnable)
+  def fork(name: String = "thread")(runnable: => Unit): SimThread = sim.fork(runnable)
 
-  def fork(runnable: => Unit): ChiterThreadList =
-    fork(s"$getForkID")(runnable)
+  def fork(runnable: => Unit): SimThread = fork(s"$getForkID")(runnable)
 
-  def ~>(condition: => Boolean): Unit = implicitly[CC].~>(condition)
+  def ~>(condition: => Boolean): Unit = sim.waitUntil(condition)
 
-  def ~>(cycles: Int): Unit = implicitly[CC].~>(cycles)
+  def ~>(cycles: Int): Unit = {
+    if (cycles == 0) sim.fork(sim.sleep(0)).join()
+    sim.sleep(cycles)
+  }
 
-  def ~>(event: Event): Unit = implicitly[CC].~>(event)
+  def ~>(event: UVMEvent): Unit = sim.waitUntil(event.isTriggered)
 
-  def time(): BigInt = implicitly[CC].getTimeNow
+  def time(): BigInt = sim.simTime()
 
-  def createEvent(name: String): Event = implicitly[CC].createEvent(name)
+  def createEvent(name: String): UVMEvent = UVMEvent(name)
 
-  def getCurrent: ChiterThread = implicitly[CC].getCurrent
+  def getCurrent: SimThread = SimManagerContext.current.thread
 
-  def finish(status: FinishStatus = StopStatus): Unit = implicitly[CC].finish(status)
+  sealed trait FinishStatus
+
+  object SuccessStatus extends FinishStatus
+
+  object StopStatus extends FinishStatus
+
+  object FatalStatus extends FinishStatus
+
+  def finish(status: FinishStatus): Unit = {
+    val t = time()
+    status match {
+      case SuccessStatus =>
+        println(s"simulation finished @$t")
+        sim.simSuccess()
+      case StopStatus =>
+        sim.simFailure(s"finish() called in ${new Throwable().getStackTrace()(4).toString}")
+      case FatalStatus =>
+        sim.simFailure("Fatal!!!")
+    }
+  }
 
   def debugLog(s: String): Unit = {
 //    println(s"[DEBUG LOG] $s")
   }
-
-  logger.Logger.setLevel(logger.LogLevel.Info)
 }

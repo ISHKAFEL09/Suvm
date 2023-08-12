@@ -1,12 +1,12 @@
 package uvm
 
-import chiter._
+
 import uvm.UVMObjection.mObjections
 
 case class UVMObjectionEvents(var waiters: Int,
-                              raised: Event,
-                              dropped: Event,
-                              allDropped: Event)
+                              raised: UVMEvent,
+                              dropped: UVMEvent,
+                              allDropped: UVMEvent)
 
 class UVMObjection(name: String = "") extends UVMReportObject(name) {
   private val mSourceCount = collection.mutable.HashMap.empty[UVMObject, Int]

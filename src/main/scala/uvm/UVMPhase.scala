@@ -1,8 +1,9 @@
 package uvm
 
-import chiter._
+
 import ENUM_PHASE_TYPE._
 import ENUM_PHASE_STATE._
+import spinal.sim.SimThread
 import uvm.UVMPhase.{mExecutionPhases, mPhaseHopper}
 
 class UVMPhase(name: String = "uvmPhase",
@@ -21,7 +22,7 @@ class UVMPhase(name: String = "uvmPhase",
 
   private val mParent: Option[UVMPhase] = parent
 
-  private var mPhaseProc: Option[ChiterThreadList] = None
+  private var mPhaseProc: Option[SimThread] = None
   private var phaseDone: Option[UVMObjection] = None
 
   // TODO: cmd line args
@@ -122,7 +123,7 @@ class UVMPhase(name: String = "uvmPhase",
     mImp.foreach(_.traverse(top, this, UVM_PHASE_ENDED))
     ~>(0)
 
-    mPhaseProc.foreach(_.kill())
+    mPhaseProc.foreach(_.terminate())
     mPhaseProc = None
     ~>(0)
 

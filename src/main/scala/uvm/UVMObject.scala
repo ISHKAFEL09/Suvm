@@ -2,7 +2,7 @@ package uvm
 
 trait UVMVoid
 
-abstract class UVMObject(val name: String) extends UVMVoid {
+abstract class UVMObject(name: String) extends UVMVoid {
   private val mInstID: Int = {
     UVMObject.mInstCount += 1
     UVMObject.mInstCount
