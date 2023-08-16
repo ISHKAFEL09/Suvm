@@ -1,7 +1,7 @@
 // Copyright 2016-2019 SiFive, Inc.
 // SPDX-License-Identifier: Apache-2.0
 
-package rockets
+package rockets.params
 
 object config {
 
