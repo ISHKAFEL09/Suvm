@@ -16,8 +16,8 @@ case class BtbIO() extends Bundle with IMasterSlave{
 case class BTB() extends Component {
   val io = master(BtbIO())
 
-  val tagMem = Mem(Bool(), 4)
-  val dataMem = Mem(UInt((28 + 30) bits), 4)
+  val tagMem: Mem[Bool] = Mem(Bool(), 4)
+  val dataMem: Mem[UInt] = Mem(UInt((28 + 30) bits), 4)
 
   val valid = tagMem(io.currentPC(3 downto 2))
   val target = dataMem(io.currentPC(3 downto 2))

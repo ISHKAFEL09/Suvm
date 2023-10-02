@@ -13,5 +13,5 @@ object TileKey extends Field[TileParams]
 
 trait HasTileParams {
   implicit val p: Parameters
-  val tileParams: TileParams = p(TileKey)
+  lazy val tileParams: TileParams = p(TileKey)
 }

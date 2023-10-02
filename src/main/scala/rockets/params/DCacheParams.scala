@@ -5,6 +5,7 @@ import spinal.core._
 trait DCacheParams extends CacheParams {
   val nSDQ: Int
   val nMSHRs: Int
+  val nTLBs: Int
 }
 
 trait HasDCacheParams extends HasCacheParams with HasCoreParams with HasLinkParams with HasTileParams {
@@ -33,4 +34,6 @@ trait HasDCacheParams extends HasCacheParams with HasCoreParams with HasLinkPara
   def encDataBits: Int = code.width(coreDataBits)
 
   def encRowBits: Int = encDataBits * rowWords
+
+  def tlbDepth: Int = cacheParams.nTLBs
 }
