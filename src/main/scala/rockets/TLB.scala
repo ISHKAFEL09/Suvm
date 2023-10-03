@@ -124,12 +124,13 @@ case class TLB()(implicit p: Parameters) extends TLBComponent {
   val tagHit = tagCam.hit && (entry.dirty | !(writep && io.req.payload.store))
   val tlbHit = vmEnabled && tagHit
   val tlbMiss = vmEnabled && !tagHit && !xcptVpn
-  io.resp.hitIdx := tagCam.hits
-  io.resp.ppn := Mux(vmEnabled & !io.req.payload.bypass, entry.ppn, io.req.payload.vpn(0, ppnBits bits))
+  io.resp.valid := io.req.fire
+  io.resp.payload.hitIdx := tagCam.hits
+  io.resp.payload.ppn := Mux(vmEnabled & !io.req.payload.bypass, entry.ppn, io.req.payload.vpn(0, ppnBits bits))
   /** exception */
-  io.resp.xcptLD := xcptVpn | (tlbHit & !readp)
-  io.resp.xcptST := xcptVpn | (tlbHit & !writep)
-  io.resp.xcptIF := xcptVpn | (tlbHit & !execp)
+  io.resp.payload.xcptLD := xcptVpn | (tlbHit & !readp)
+  io.resp.payload.xcptST := xcptVpn | (tlbHit & !writep)
+  io.resp.payload.xcptIF := xcptVpn | (tlbHit & !execp)
 
   /** if miss, send req to ptw */
   /** fsm */
@@ -145,12 +146,18 @@ case class TLB()(implicit p: Parameters) extends TLBComponent {
       
     }
   }
-  /** to send ptw request */
+  /** send ptw request */
   val reqReg = RegInit {
     val r = TLBReq()
     r.assignFromBits(B(0))
     r
   }
   /** to update tag cam */
-  val refillTagReg = Reg(tagCam.tag)
+  val refillTagReg = RegInit(U(0, widthOf(tagCam.tag) bits))
+  val refillAddrReg = RegInit(U(0, widthOf(tagCam.writeAddr) bits))
+
+  /** idle -> request */
+  when (fsm.isExiting(fsm.sIdle)) {
+    reqReg := io.req.payload
+  }
 }
