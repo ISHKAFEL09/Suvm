@@ -34,7 +34,7 @@ case class PLRU(n: Int) extends Replacement {
     var idx = U(1, 1 bits)
     for (_ <- 0 until log2Up(n))
       idx = idx @@ state(idx)
-    idx(0 until log2Up(n))
+    idx(0, log2Up(n) bits)
   }
 
   /**
