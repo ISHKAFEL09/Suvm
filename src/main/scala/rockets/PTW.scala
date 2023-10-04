@@ -31,7 +31,7 @@ case class PTE()(implicit p: Parameters) extends PTWBundle {
 
 case class PTWReq()(implicit p: Parameters) extends PTWBundle {
   val addr: UInt = UInt(vpnBits bits)
-  val prv: UInt = UInt(2 bits)
+  val prv: PrivEnum.C = PrivEnum()
   val store, fetch = Bool()
 }
 
