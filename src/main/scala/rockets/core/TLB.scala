@@ -1,8 +1,10 @@
-package rockets
+package rockets.core
 
-import params._
-import params.config._
-import rockets.PrivEnum._
+import rockets.core.PrivEnum._
+import rockets.generate
+import rockets.params.config.Parameters
+import rockets.params._
+import rockets.tilelink.{CoherencePolicy, DirectoryRepresentation, MESICoherence}
 import rockets.utils.PLRU
 import spinal.core._
 import spinal.lib._
@@ -96,7 +98,11 @@ case class TLB()(implicit p: Parameters) extends TLBComponent {
 
     /** whether correspond tag is store in buffer */
     val tag = UInt(asIdBits + vpnBits bits)
-    val hits = Cat((0 until depth).map(i => validBits(i) && (tags.readAsync(U(i, log2Up(depth) bits)) === tag))).asUInt
+    val hits = Cat(
+      (0 until depth).map(i =>
+        validBits(i) && (tags.readAsync(U(i, log2Up(depth) bits)) === tag)
+      )
+    ).asUInt
     val hit = hits.orR
 
     /** replace policy */
@@ -146,6 +152,7 @@ case class TLB()(implicit p: Parameters) extends TLBComponent {
     io.req.payload.vpn(0, ppnBits bits)
   )
   io.resp.miss := tlbMiss
+
   /** update plru */
   when(io.req.fire && tlbHit) {
     tagCam.replace.set(hitEntry)
@@ -231,7 +238,7 @@ case class TLB()(implicit p: Parameters) extends TLBComponent {
   refillEntry.sw := pte.sw() && !io.ptw.resp.error
   refillEntry.sx := pte.sx() && !io.ptw.resp.error
   refillEntry.dirty := pte.dirty
-  when (io.ptw.resp.fire) {
+  when(io.ptw.resp.fire) {
     tagRam.write(refillAddrReg, refillEntry)
     tagValids(refillAddrReg) := !io.ptw.resp.error
   }
@@ -240,50 +247,55 @@ case class TLB()(implicit p: Parameters) extends TLBComponent {
   tagCam.writeAddr := refillAddrReg
   tagCam.writeTag := refillTagReg
 
-  /**
-   * clear all entries on flush, or invalid entries on access
-   */
+  /** clear all entries on flush, or invalid entries on access
+    */
   tagCam.clear := io.ptw.invalidate || io.req.fire
-  val invalidEntry = ~tagValids | ((tagCam.hit && ~tagHit).asUInt(depth bits) |<< hitEntry)
-  tagCam.clearMask := io.ptw.invalidate? UInt(depth bits).setAll() | invalidEntry
+  val invalidEntry =
+    ~tagValids | ((tagCam.hit && ~tagHit).asUInt(depth bits) |<< hitEntry)
+  tagCam.clearMask := io.ptw.invalidate ? UInt(depth bits)
+    .setAll() | invalidEntry
 }
 
 object TLBApp extends App {
-  implicit val config = Parameters((_, _, _) => {
-    case TileKey => new TileParams {
-      override val core: CoreParams = new CoreParams {
-        override val xLen: Int = 64
-        override val retireWidth: Int = 0
-        override val coreFetchWidth: Int = 0
-        override val coreInstBits: Int = 32
-        override val coreDCacheRegTagBits: Int = 24
-        override val fastLoadByte: Boolean = false
-        override val fastLoadWord: Boolean = false
-        override val maxHartIdBits: Int = 1
+  implicit def config: Parameters = Parameters((_, _, _) => {
+    case TileKey =>
+      new TileParams {
+        override val core: CoreParams = new CoreParams {
+          override val xLen: Int = 64
+          override val retireWidth: Int = 0
+          override val coreFetchWidth: Int = 0
+          override val coreInstBits: Int = 32
+          override val coreDCacheRegTagBits: Int = 24
+          override val fastLoadByte: Boolean = false
+          override val fastLoadWord: Boolean = false
+          override val maxHartIdBits: Int = 1
+        }
+        override val dCache: DCacheParams = new DCacheParams {
+          override val nSDQ: Int = 8
+          override val nMSHRs: Int = 1
+          override val nTLBs: Int = 16
+          override val nSets: Int = 8
+          override val blockOffBits: Int = 4
+          override val nWays: Int = 4
+          override val rowBits: Int = 128
+          override val code: Option[Code] = None
+        }
+        override val link: LinkParams = new LinkParams {
+          override val pAddrBits: Int = 24
+          override val vAddrBits: Int = 24
+          override val pgIdxBits: Int = 8
+          override val ppnBits: Int = 24
+          override val vpnBits: Int = 24
+          override val pgLevels: Int = 1
+          override val asIdBits: Int = 1
+          override val pgLevelBits: Int = 1
+          override val TLDataBeats: Int = 4
+          override val TLDataBits: Int = 128
+          override val coherencePolicy: CoherencePolicy = MESICoherence(new DirectoryRepresentation() {
+            override val width: Int = 0
+          })
+        }
       }
-      override val dCache: DCacheParams = new DCacheParams {
-        override val nSDQ: Int = 8
-        override val nMSHRs: Int = 1
-        override val nTLBs: Int = 16
-        override val nSets: Int = 8
-        override val blockOffBits: Int = 4
-        override val nWays: Int = 4
-        override val rowBits: Int = 128
-        override val code: Option[Code] = None
-      }
-      override val link: LinkParams = new LinkParams {
-        override val pAddrBits: Int = 24
-        override val vAddrBits: Int = 24
-        override val pgIdxBits: Int = 8
-        override val ppnBits: Int = 24
-        override val vpnBits: Int = 24
-        override val pgLevels: Int = 1
-        override val asIdBits: Int = 1
-        override val pgLevelBits: Int = 1
-        override val TLDataBeats: Int = 4
-        override val TLDataBits: Int = 128
-      }
-    }
     case _ =>
   })
   generate(TLB())

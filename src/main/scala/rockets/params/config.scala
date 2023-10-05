@@ -78,7 +78,7 @@ object config {
       * @return a new Parameters object whose settings are first the `f`, then `this`
       */
     final def alter(
-      f: (View, View, View) => PartialFunction[Any, Any]
+        f: (View, View, View) => PartialFunction[Any, Any]
     ): Parameters =
       alter(Parameters(f))
 
@@ -107,10 +107,10 @@ object config {
       alter(new MapParameters(m))
 
     protected[config] def chain[T](
-      site:  View,
-      here:  View,
-      up:    View,
-      pname: Field[T]
+        site: View,
+        here: View,
+        up: View,
+        pname: Field[T]
     ): Option[T]
     protected[config] def find[T](pname: Field[T]): Option[T] =
       chain(this, this, new TerminalView, pname)
@@ -153,10 +153,10 @@ object config {
       this(Parameters(f))
 
     protected[config] def chain[T](
-      site:  View,
-      here:  View,
-      up:    View,
-      pname: Field[T]
+        site: View,
+        here: View,
+        up: View,
+        pname: Field[T]
     ) = p.chain(site, here, up, pname)
     override def toString = this.getClass.getSimpleName
     def toInstance = this
@@ -172,7 +172,8 @@ object config {
     def find[T](pname: Field[T]) = head.chain(site, this, up, pname)
   }
 
-  private class ChainParameters(x: Parameters, y: Parameters) extends Parameters {
+  private class ChainParameters(x: Parameters, y: Parameters)
+      extends Parameters {
     def chain[T](site: View, here: View, up: View, pname: Field[T]) = {
       x.chain(site, here, new ChainView(y, site, up), pname)
     }
@@ -184,13 +185,13 @@ object config {
   }
 
   private class PartialParameters(
-    f: (View, View, View) => PartialFunction[Any, Any])
-      extends Parameters {
+      f: (View, View, View) => PartialFunction[Any, Any]
+  ) extends Parameters {
     protected[config] def chain[T](
-      site:  View,
-      here:  View,
-      up:    View,
-      pname: Field[T]
+        site: View,
+        here: View,
+        up: View,
+        pname: Field[T]
     ) = {
       val g = f(site, here, up)
       if (g.isDefinedAt(pname)) Some(g.apply(pname).asInstanceOf[T])
@@ -200,10 +201,10 @@ object config {
 
   private class MapParameters(map: Map[Any, Any]) extends Parameters {
     protected[config] def chain[T](
-      site:  View,
-      here:  View,
-      up:    View,
-      pname: Field[T]
+        site: View,
+        here: View,
+        up: View,
+        pname: Field[T]
     ) = {
       val g = map.get(pname)
       if (g.isDefined) Some(g.get.asInstanceOf[T]) else up.find(pname)

@@ -2,7 +2,6 @@ package rockets.params
 
 import config._
 
-
 trait TileParams {
   val core: CoreParams
   val dCache: DCacheParams

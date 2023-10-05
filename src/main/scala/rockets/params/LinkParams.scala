@@ -1,5 +1,7 @@
 package rockets.params
 
+import rockets.tilelink._
+
 trait LinkParams {
   val pAddrBits: Int
   val vAddrBits: Int
@@ -11,6 +13,7 @@ trait LinkParams {
   val pgLevelBits: Int
   val TLDataBeats: Int
   val TLDataBits: Int
+  val coherencePolicy: CoherencePolicy
 }
 
 trait HasLinkParams {
@@ -36,5 +39,8 @@ trait HasLinkParams {
 
   def coreMaxAddrBits: Int = math.max(ppnBits, vpnBits + 1) + pgIdxBits
 
-  def vAddrBitsExtended: Int = if (vAddrBits < xLen) vAddrBits + 1 else vAddrBits
+  def vAddrBitsExtended: Int =
+    if (vAddrBits < xLen) vAddrBits + 1 else vAddrBits
+
+  def tlCoh = linkParams.coherencePolicy
 }

@@ -1,7 +1,8 @@
-package rockets
+package rockets.core
 
 import spinal.core._
 
+/** CSR-MStatus register, refer to priv-spec */
 case class MStatus() extends Bundle {
   val sd = Bool()
   val zero2 = UInt(31 bits)

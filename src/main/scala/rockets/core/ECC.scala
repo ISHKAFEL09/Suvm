@@ -1,4 +1,4 @@
-package rockets
+package rockets.core
 
 import spinal.core._
 
@@ -31,4 +31,3 @@ class IdentityCode extends Code {
     override def uncorrectable: Bool = False
   }
 }
-

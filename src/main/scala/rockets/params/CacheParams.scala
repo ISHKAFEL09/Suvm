@@ -1,6 +1,7 @@
 package rockets.params
 
 import rockets._
+import rockets.core.{Code, IdentityCode}
 import spinal.core._
 
 trait CacheParams {

@@ -2,6 +2,7 @@ package rockets
 
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
+import rockets.core.{BTB, BtbIO}
 import spinal.core._
 import spinal.core.sim._
 import uvm._

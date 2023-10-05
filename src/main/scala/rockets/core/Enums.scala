@@ -1,4 +1,4 @@
-package rockets
+package rockets.core
 
 import spinal.core._
 

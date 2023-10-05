@@ -8,12 +8,16 @@ trait DCacheParams extends CacheParams {
   val nTLBs: Int
 }
 
-trait HasDCacheParams extends HasCacheParams with HasCoreParams with HasLinkParams with HasTileParams {
+trait HasDCacheParams
+    extends HasCacheParams
+    with HasCoreParams
+    with HasLinkParams
+    with HasTileParams {
   override val cacheParams: DCacheParams = tileParams.dCache
 
   def outerDataBeats: Int = linkParams.TLDataBeats
 
-  def  outerDataBits: Int = linkParams.TLDataBits
+  def outerDataBits: Int = linkParams.TLDataBits
 
   def refillCyclesPerBeat: Int = outerDataBits / rowBits
 

@@ -1,12 +1,21 @@
-package rockets
+package rockets.core
 
-import params._
-import params.config._
+import rockets.generate
+import rockets.params.HasDCacheParams
+import rockets.params.config.Parameters
 import spinal.core._
 import spinal.lib._
 
-abstract class PTWBundle(implicit val p: Parameters) extends Bundle with HasDCacheParams
+abstract class PTWBundle(implicit val p: Parameters)
+    extends Bundle
+    with HasDCacheParams
 
+abstract class PTWComponent(implicit val p: Parameters)
+    extends Component
+    with HasDCacheParams
+
+/** pte entry, refer to priv-spec
+  */
 case class PTE()(implicit p: Parameters) extends PTWBundle {
   val ppn: UInt = UInt(ppnBits bits)
   val dirty, ref, valid = Bool()
@@ -29,18 +38,33 @@ case class PTE()(implicit p: Parameters) extends PTWBundle {
   def sx(dummy: Int = 0): Bool = valid && typ >= 4 && typ(1)
 }
 
+/**
+ * request to ptw
+ */
 case class PTWReq()(implicit p: Parameters) extends PTWBundle {
+  /** vpn address */
   val addr: UInt = UInt(vpnBits bits)
+  /** request privilege */
   val prv: PrivEnum.C = PrivEnum()
-  val store, fetch = Bool()
+  /** request from a store instr, needs write permission */
+  val store = Bool()
+  /** instruction fetch, needs execute permission */
+  val fetch = Bool()
 }
 
+/**
+ * pte response
+ */
 case class PTWResp()(implicit p: Parameters) extends PTWBundle {
+  /** correspond pte entry */
   val pte: PTE = PTE()
+  /** whether error happened */
   val error: Bool = Bool()
 }
 
-case class TLB2PTWIO()(implicit p: Parameters) extends PTWBundle with IMasterSlave {
+case class TLB2PTWIO()(implicit p: Parameters)
+    extends PTWBundle
+    with IMasterSlave {
   val req: Stream[PTWReq] = Stream(PTWReq())
   val resp: Flow[PTWResp] = Flow(PTWResp())
   val status: MStatus = MStatus()
@@ -51,4 +75,14 @@ case class TLB2PTWIO()(implicit p: Parameters) extends PTWBundle with IMasterSla
     slave(resp)
     in(status, invalidate)
   }
+}
+
+case class PTW(reqNum: Int)(implicit p: Parameters) extends PTWComponent {
+  val io = new Bundle {
+    val requestor = Vec(slave(TLB2PTWIO()), reqNum)
+  }
+}
+
+object PTWApp extends App {
+  generate(PTW(4)(TLBApp.config))
 }
