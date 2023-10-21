@@ -4,38 +4,36 @@ import spinal.core._
 
 object MemOps {
   val MT_SZ = 3
-  val MT_X  = M"---"
-  val MT_B  = M"000"
-  val MT_H  = M"001"
-  val MT_W  = M"010"
-  val MT_D  = M"011"
-  val MT_BU = M"100"
-  val MT_HU = M"101"
-  val MT_WU = M"110"
-  val MT_Q  = M"111"
+  def MT_B  = U"000"
+  def MT_H  = U"001"
+  def MT_W  = U"010"
+  def MT_D  = U"011"
+  def MT_BU = U"100"
+  def MT_HU = U"101"
+  def MT_WU = U"110"
+  def MT_Q  = U"111"
 
   val NUM_XA_OPS = 9
   val M_SZ      = 5
-  val M_X       = M"-----"
-  val M_XRD     = M"00000" // int load
-  val M_XWR     = M"00001" // int store
-  val M_PFR     = M"00010" // prefetch with intent to read
-  val M_PFW     = M"00011" // prefetch with intent to write
-  val M_XA_SWAP = M"00100"
-  val M_NOP     = M"00101"
-  val M_XLR     = M"00110"
-  val M_XSC     = M"00111"
-  val M_XA_ADD  = M"01000"
-  val M_XA_XOR  = M"01001"
-  val M_XA_OR   = M"01010"
-  val M_XA_AND  = M"01011"
-  val M_XA_MIN  = M"01100"
-  val M_XA_MAX  = M"01101"
-  val M_XA_MINU = M"01110"
-  val M_XA_MAXU = M"01111"
-  val M_FLUSH   = M"10000" // write back dirty data and cede R/W permissions
-  val M_PRODUCE = M"10001" // write back dirty data and cede W permissions
-  val M_CLEAN   = M"10011" // write back dirty data and retain R/W permissions
+  def M_XRD     = U"00000" // int load
+  def M_XWR     = U"00001" // int store
+  def M_PFR     = U"00010" // prefetch with intent to read
+  def M_PFW     = U"00011" // prefetch with intent to write
+  def M_XA_SWAP = U"00100"
+  def M_NOP     = U"00101"
+  def M_XLR     = U"00110"
+  def M_XSC     = U"00111"
+  def M_XA_ADD  = U"01000"
+  def M_XA_XOR  = U"01001"
+  def M_XA_OR   = U"01010"
+  def M_XA_AND  = U"01011"
+  def M_XA_MIN  = U"01100"
+  def M_XA_MAX  = U"01101"
+  def M_XA_MINU = U"01110"
+  def M_XA_MAXU = U"01111"
+  def M_FLUSH   = U"10000" // write back dirty data and cede R/W permissions
+  def M_PRODUCE = U"10001" // write back dirty data and cede W permissions
+  def M_CLEAN   = U"10011" // write back dirty data and retain R/W permissions
 
   def isAMO(cmd: UInt) = cmd(3) || cmd === M_XA_SWAP
   def isPrefetch(cmd: UInt) = cmd === M_PFR || cmd === M_PFW

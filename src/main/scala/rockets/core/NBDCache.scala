@@ -5,6 +5,7 @@ import rockets.params.HasDCacheParams
 import rockets.params.config.Parameters
 import rockets.tilelink._
 import spinal.core._
+import spinal.lib._
 
 abstract class NBDCacheBundle(implicit val p: Parameters)
     extends Bundle
@@ -114,6 +115,53 @@ case class NBDCacheResp()(implicit p: Parameters)
   val hasData = Bool()
   val subwordData = UInt(coreDataBits bits)
   val storeData = UInt(coreDataBits bits)
+}
+
+/** exceptions for cache
+  */
+case class NBDCacheExceptions()(implicit p: Parameters) extends NBDCacheBundle {
+
+  /** misaligned exception from request to cache */
+  val maXcpt = new Bundle {
+    val ld, st = Bool()
+  }
+
+  /** exception from dtlb response */
+  val dtlbXcpt = new Bundle {
+    val ld, st = Bool()
+  }
+}
+
+/** other module <-> NBDCache, cache as slave
+  */
+case class NBDCacheIO()(implicit p: Parameters)
+    extends NBDCacheBundle
+    with IMasterSlave {
+
+  /** request to cache */
+  val req = Stream(NBDCacheReq())
+
+  /** cache response */
+  val resp = Flow(NBDCacheResp())
+
+  /** id for next replay req */
+  val replayNext = Flow(UInt(coreDCacheRegTagBits bits))
+
+  /** cache exceptions */
+  val xcpt = NBDCacheExceptions()
+
+  /** reset lr/sc counter */
+  val invalidateLR = Bool()
+
+  // TODO: meaning?
+  val ordered = Bool()
+
+  override def asMaster(): Unit = {
+    master(req)
+    slave(resp, replayNext)
+    in(xcpt, ordered)
+    out(invalidateLR)
+  }
 }
 
 class NBDCache {}

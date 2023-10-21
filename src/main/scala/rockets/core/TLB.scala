@@ -4,7 +4,11 @@ import rockets.core.PrivEnum._
 import rockets.generate
 import rockets.params.config.Parameters
 import rockets.params._
-import rockets.tilelink.{CoherencePolicy, DirectoryRepresentation, MESICoherence}
+import rockets.tilelink.{
+  CoherencePolicy,
+  DirectoryRepresentation,
+  MESICoherence
+}
 import rockets.utils.PLRU
 import spinal.core._
 import spinal.lib._
@@ -261,7 +265,7 @@ object TLBApp extends App {
     case TileKey =>
       new TileParams {
         override val core: CoreParams = new CoreParams {
-          override val xLen: Int = 64
+          override val xLen: Int = 32
           override val retireWidth: Int = 0
           override val coreFetchWidth: Int = 0
           override val coreInstBits: Int = 32
@@ -281,19 +285,20 @@ object TLBApp extends App {
           override val code: Option[Code] = None
         }
         override val link: LinkParams = new LinkParams {
-          override val pAddrBits: Int = 24
-          override val vAddrBits: Int = 24
-          override val pgIdxBits: Int = 8
-          override val ppnBits: Int = 24
-          override val vpnBits: Int = 24
-          override val pgLevels: Int = 1
+          override val pAddrBits: Int = 34
+          override val vAddrBits: Int = 32
+          override val pgIdxBits: Int = 12
+          override val ppnBits: Int = 22
+          override val vpnBits: Int = 20
+          override val pgLevels: Int = 2
           override val asIdBits: Int = 1
-          override val pgLevelBits: Int = 1
+          override val pgLevelBits: Int = 10
           override val TLDataBeats: Int = 4
           override val TLDataBits: Int = 128
-          override val coherencePolicy: CoherencePolicy = MESICoherence(new DirectoryRepresentation() {
-            override val width: Int = 0
-          })
+          override val coherencePolicy: CoherencePolicy =
+            MESICoherence(new DirectoryRepresentation() {
+              override val width: Int = 0
+            })
         }
       }
     case _ =>
