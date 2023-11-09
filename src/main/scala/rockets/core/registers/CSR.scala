@@ -1,5 +1,6 @@
-package rockets.core
+package rockets.core.registers
 
+import rockets.core.enums._
 import spinal.core._
 
 /** CSR-MStatus register, refer to priv-spec */

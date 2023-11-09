@@ -1,4 +1,4 @@
-package rockets.core
+package rockets.core.enums
 
 import spinal.core._
 

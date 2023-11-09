@@ -1,7 +1,9 @@
-package rockets.core
+package rockets.core.mmu
 
-import rockets.core.MemOps._
 import rockets.core.cache.nbdcache.NBDCacheIO
+import rockets.core.consts.MemOps._
+import rockets.core.enums._
+import rockets.core.registers.MStatus
 import rockets.params.HasDCacheParams
 import rockets.params.config.Parameters
 import rockets.utils.PLRU

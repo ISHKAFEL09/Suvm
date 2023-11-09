@@ -1,6 +1,7 @@
 package rockets.core.cache.nbdcache
 
 import rockets.core.cache._
+import rockets.core.mmu.TLBApp
 import rockets.params.config.Parameters
 import rockets.tilelink._
 import spinal.core._

@@ -1,11 +1,11 @@
-package rockets.core
+package rockets.core.mmu
 
-import rockets.core.PrivEnum._
+import rockets.core.enums._
 import rockets.generate
-import rockets.params.config.Parameters
 import rockets.params._
+import rockets.params.config.Parameters
 import rockets.tilelink._
-import rockets.utils.PLRU
+import rockets.utils._
 import spinal.core._
 import spinal.lib._
 import spinal.lib.fsm._
@@ -127,8 +127,8 @@ case class TLB()(implicit p: Parameters) extends TLBComponent {
     io.ptw.status.prv1,
     io.ptw.status.prv
   )
-  val privS = priv === PRV_S
-  val privUseVm = priv.asBits.asUInt <= PRV_S.asBits.asUInt
+  val privS = priv === PrivEnum.PRV_S
+  val privUseVm = priv.asBits.asUInt <= PrivEnum.PRV_S.asBits.asUInt
   val vmEnabled = io.ptw.status.vm(3) & privUseVm
 
   /** firstly, read tag_ram and tag_cam */
@@ -295,24 +295,34 @@ object TLBApp extends App {
             MESICoherence(new DirectoryRepresentation() {
               override val width: Int = 0
             })
+
           /** unique name per TL network */
           override val TLId: String = "nbdcache"
+
           /** manager agents number for this network */
           override val TLManagerNum: Int = 1
+
           /** client agents number for this network */
           override val TLClientNum: Int = 1
+
           /** number of client agents that cache data */
           override val TLCacheClientNum: Int = 1
+
           /** number of client agents that do not cache data */
           override val TLNoCacheClientNum: Int = 0
+
           /** maximum number of outstanding xact per client */
           override val TLMaxClientOst: Int = 1
+
           /** maximum number of clients multiplexed onto one port */
           override val TLMaxClientsPerPort: Int = 1
+
           /** maximum number of outstanding xact per manager */
           override val TLMaxManagerOst: Int = 1
+
           /** width of cache block address */
           override val TLBlockAddrBits: Int = 7
+
           /** amo alu op size */
           override val AmoOperandBits: Int = 32
         }

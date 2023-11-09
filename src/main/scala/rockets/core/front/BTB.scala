@@ -1,4 +1,4 @@
-package rockets.core
+package rockets.core.front
 
 import rockets.generate
 import rockets.utils.FillInterleaved

@@ -1,6 +1,6 @@
 package rockets.core.cache.nbdcache
 
-import rockets.core.MemOps._
+import rockets.core.consts.MemOps._
 import rockets.core.cache._
 import rockets.params.HasDCacheParams
 import rockets.params.config.Parameters

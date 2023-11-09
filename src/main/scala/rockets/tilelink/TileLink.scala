@@ -1,6 +1,6 @@
 package rockets.tilelink
 
-import rockets.core.MemOps._
+import rockets.core.consts.MemOps._
 import rockets.params._
 import spinal.core._
 import rockets.params.config._
