@@ -1,43 +1,20 @@
-package rockets.core
+package rockets.core.cache.nbdcache
 
 import rockets.core.MemOps._
+import rockets.core.cache._
 import rockets.params.HasDCacheParams
 import rockets.params.config.Parameters
 import rockets.tilelink._
 import spinal.core._
 import spinal.lib._
 
-abstract class NBDCacheBundle(implicit val p: Parameters)
-    extends Bundle
+abstract class NBDCacheBundle(implicit p: Parameters)
+    extends CacheBundle
     with HasDCacheParams
 
-abstract class NBDCacheComponent(implicit val p: Parameters)
-    extends Component
+abstract class NBDCacheComponent(implicit p: Parameters)
+    extends CacheComponent
     with HasDCacheParams
-
-/** metadata for coherence, include tag and coh state
-  */
-trait MetaData extends NBDCacheBundle {
-  val tag = UInt(tagBits bits)
-  val coh: HasCoherenceMetaData
-}
-
-case class NBDMetaData()(implicit p: Parameters) extends MetaData {
-  override val coh: HasCoherenceMetaData = ClientMetaData()
-}
-
-/** meta read, include set and way
-  */
-class MetaReadReq(implicit p: Parameters) extends NBDCacheBundle {
-  val idx = UInt(idxBits bits)
-  val way = UInt(nWays bits)
-}
-
-/** meta write, plus write meta data
-  */
-class MetaWriteReq(implicit p: Parameters) extends MetaReadReq {
-  val data = NBDMetaData()
-}
 
 /** core <-> nbdcache
   */
@@ -71,14 +48,6 @@ trait HasCtrlInfo extends NBDCacheBundle {
 
   /** whether current request is ppn */
   val phys = Bool()
-}
-
-/** sdq_id to mshr & from replay
-  */
-trait HasSDQId extends NBDCacheBundle {
-
-  /** store data queue, for replay st req */
-  val sdqId = UInt(log2Up(sdqDepth) bits)
 }
 
 /** miss info to mshr

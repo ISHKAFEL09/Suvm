@@ -4,11 +4,7 @@ import rockets.core.PrivEnum._
 import rockets.generate
 import rockets.params.config.Parameters
 import rockets.params._
-import rockets.tilelink.{
-  CoherencePolicy,
-  DirectoryRepresentation,
-  MESICoherence
-}
+import rockets.tilelink._
 import rockets.utils.PLRU
 import spinal.core._
 import spinal.lib._
@@ -153,7 +149,7 @@ case class TLB()(implicit p: Parameters) extends TLBComponent {
   io.resp.payload.ppn := Mux(
     vmEnabled & !io.req.payload.bypass,
     entry.ppn,
-    io.req.payload.vpn(0, ppnBits bits)
+    io.req.payload.vpn.resized
   )
   io.resp.miss := tlbMiss
 
@@ -299,6 +295,26 @@ object TLBApp extends App {
             MESICoherence(new DirectoryRepresentation() {
               override val width: Int = 0
             })
+          /** unique name per TL network */
+          override val TLId: String = "nbdcache"
+          /** manager agents number for this network */
+          override val TLManagerNum: Int = 1
+          /** client agents number for this network */
+          override val TLClientNum: Int = 1
+          /** number of client agents that cache data */
+          override val TLCacheClientNum: Int = 1
+          /** number of client agents that do not cache data */
+          override val TLNoCacheClientNum: Int = 0
+          /** maximum number of outstanding xact per client */
+          override val TLMaxClientOst: Int = 1
+          /** maximum number of clients multiplexed onto one port */
+          override val TLMaxClientsPerPort: Int = 1
+          /** maximum number of outstanding xact per manager */
+          override val TLMaxManagerOst: Int = 1
+          /** width of cache block address */
+          override val TLBlockAddrBits: Int = 7
+          /** amo alu op size */
+          override val AmoOperandBits: Int = 32
         }
       }
     case _ =>

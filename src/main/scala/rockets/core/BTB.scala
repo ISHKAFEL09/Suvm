@@ -1,6 +1,7 @@
 package rockets.core
 
 import rockets.generate
+import rockets.utils.FillInterleaved
 import spinal.core._
 import spinal.lib._
 
@@ -16,6 +17,9 @@ case class BtbIO() extends Bundle with IMasterSlave {
 
 case class BTB() extends Component {
   val io = master(BtbIO())
+  val dout = out port UInt(32 bits)
+
+  dout := FillInterleaved(4, B"00100000").asUInt
 
   val tagMem: Mem[Bool] = Mem(Bool(), 4)
   val dataMem: Mem[UInt] = Mem(UInt((28 + 30) bits), 4)

@@ -1,6 +1,7 @@
 package rockets.core
 
 import rockets.core.MemOps._
+import rockets.core.cache.nbdcache.NBDCacheIO
 import rockets.params.HasDCacheParams
 import rockets.params.config.Parameters
 import rockets.utils.PLRU
