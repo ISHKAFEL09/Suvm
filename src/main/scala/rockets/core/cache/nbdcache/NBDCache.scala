@@ -58,7 +58,7 @@ trait HasMissInfo extends NBDCacheBundle {
   val tagMatch = Bool()
 
   /** meta data of miss entry */
-  val oldMeta = NBDMetaData()
+  val oldMeta = NBDCacheMeta()
 
   /** way to be replaced */
   val way = UInt(nWays bits)

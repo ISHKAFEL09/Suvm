@@ -1,57 +1,51 @@
 package rockets.core.cache.nbdcache
 
 import rockets.core.cache._
-import rockets.core.mmu.TLBApp
 import rockets.params.config.Parameters
 import rockets.tilelink._
 import spinal.core._
-import spinal.lib._
 
 /** meta array for nbdcache */
 
 /** meta data store in tag mem, include tag and coh
   */
-case class NBDMetaData()(implicit p: Parameters)
+case class NBDCacheMetaData()(implicit p: Parameters)
     extends NBDCacheBundle
-    with MetaData {
-  val tag: UInt = UInt(tagBits bits)
+    with CacheMetaData {
   override val coh: HasCoherenceMetaData = ClientMetaData()
 }
 
 /** meta read, include set and tag
   */
-class NBDMetaReadReq(implicit p: Parameters)
+class NBDCacheMetaReadReq(implicit p: Parameters)
     extends NBDCacheBundle
-    with MetaReadReq {
-  val idx: UInt = UInt(idxBits bits)
+    with CacheMetaReadReq {
   val tag: UInt = UInt(tagBits bits)
 }
 
 /** meta write, plus write meta data and way
   */
-class NBDMetaWriteReq(implicit p: Parameters)
+class NBDCacheMetaWriteReq(implicit p: Parameters)
     extends NBDCacheBundle
-    with MetaWriteReq[NBDMetaData] {
-  val idx: UInt = UInt(idxBits bits)
-  val data: NBDMetaData = NBDMetaData()
-  val way: UInt = UInt(nWays bits)
+    with CacheMetaWriteReq[NBDCacheMetaData] {
+  val data: NBDCacheMetaData = NBDCacheMetaData()
 }
 
-/** used in [[NBDCache]], based on [[Meta]], contains meta data array
+/** used in [[NBDCache]], based on [[CacheMetaData]], contains meta data array
   */
-case class NBDMeta()(implicit p: Parameters)
+case class NBDCacheMeta()(implicit p: Parameters)
     extends NBDCacheComponent
-    with Meta[NBDMetaData] {
-  override def data: HardType[NBDMetaData] = NBDMetaData()
+    with CacheMeta[NBDCacheMetaData] {
+  override def data: HardType[NBDCacheMetaData] = NBDCacheMetaData()
 
-  override def writeReq: HardType[MetaWriteReq[NBDMetaData]] =
-    new NBDMetaWriteReq()
+  override def writeReq: HardType[CacheMetaWriteReq[NBDCacheMetaData]] =
+    new NBDCacheMetaWriteReq()
 
-  override def readReq: HardType[MetaReadReq] = new NBDMetaReadReq()
+  override def readReq: HardType[CacheMetaReadReq] = new NBDCacheMetaReadReq()
 }
 
-object NBDMeta extends App {
+object NBDCacheMeta extends App {
   import rockets._
-  import rockets.core._
-  generate(NBDMeta()(TLBApp.config))
+  import rockets.core.mmu.TLBApp
+  generate(NBDCacheMeta()(TLBApp.config))
 }

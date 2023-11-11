@@ -275,7 +275,7 @@ object TLBApp extends App {
           override val nMSHRs: Int = 1
           override val nTLBs: Int = 16
           override val nSets: Int = 8
-          override val blockOffBits: Int = 4
+          override val blockOffBits: Int = 6
           override val nWays: Int = 4
           override val rowBits: Int = 128
           override val code: Option[Code] = None

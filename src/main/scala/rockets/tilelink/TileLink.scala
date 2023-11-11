@@ -294,7 +294,9 @@ object Get {
 }
 
 /** Get a whole block from outer memory hierarchy */
-object GetBlock {}
+object GetBlock {
+
+}
 
 object Grant {
   object BuiltInTypeEnum extends SpinalEnum(binarySequential) {
