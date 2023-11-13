@@ -214,6 +214,9 @@ object Acquire {
       BuiltInTypeEnum.PUT_ATOMIC
     )
 
+  def fullWriteMask(implicit p: Parameters): UInt =
+    UInt(new Acquire().tlWriteMaskBits bits).setAll()
+
   /** generic constructor */
   def apply(
       builtIn: Bool,
@@ -223,7 +226,7 @@ object Acquire {
       beatAddr: UInt = U(0),
       data: UInt = U(0),
       union: UInt = U(0),
-      allocHint: Bool = True
+      allocHint: Bool = False
   )(implicit p: Parameters): Acquire = {
     val acq = new Acquire()
     acq.builtIn := builtIn
@@ -295,7 +298,142 @@ object Get {
 
 /** Get a whole block from outer memory hierarchy */
 object GetBlock {
+  def apply(xactId: UInt, blockAddr: UInt, allocHint: Bool = True)(implicit
+      p: Parameters
+  ): Acquire = {
+    Acquire(
+      builtIn = True,
+      typ = Acquire.BuiltInTypeEnum.GET_BLOCK.asBits.asUInt,
+      xactId = xactId,
+      blockAddr = blockAddr,
+      union = MT_Q @@ M_XRD,
+      allocHint = allocHint
+    )
+  }
+}
 
+/** prefetch a block into outer memory with read permission */
+object GetPrefetch {
+  def apply(xactId: UInt, blockAddr: UInt)(implicit p: Parameters): Acquire = {
+    Acquire(
+      builtIn = True,
+      typ = Acquire.BuiltInTypeEnum.PREFETCH.asBits.asUInt,
+      xactId = xactId,
+      blockAddr = blockAddr,
+      union = MT_Q @@ M_XRD,
+      allocHint = True
+    )
+  }
+}
+
+/** put a single beat into the outer memory */
+object Put {
+  def apply(
+      xactId: UInt,
+      blockAddr: UInt,
+      beatAddr: UInt,
+      data: UInt,
+      mask: UInt
+  )(implicit p: Parameters): Acquire = {
+    Acquire(
+      builtIn = True,
+      typ = Acquire.BuiltInTypeEnum.PUT.asBits.asUInt,
+      xactId = xactId,
+      blockAddr = blockAddr,
+      beatAddr = beatAddr,
+      data = data,
+      union = mask,
+      allocHint = True
+    )
+  }
+}
+
+/** Put a whole cache block of data into the outer memory hierarchy
+  * If the write mask is not full, the block will be allocated in the
+  * next-outermost level of the hierarchy, will write to other word again?
+  * If the write mask is full, the client can hint whether the block
+  * should be allocated or not.
+  */
+object PutBlock {
+
+  /** write partial data with mask */
+  def apply(
+      xactId: UInt,
+      blockAddr: UInt,
+      beatAddr: UInt,
+      data: UInt,
+      mask: UInt
+  )(implicit p: Parameters): Acquire = {
+    Acquire(
+      builtIn = True,
+      typ = Acquire.BuiltInTypeEnum.PUT_BLOCK.asBits.asUInt,
+      xactId = xactId,
+      blockAddr = blockAddr,
+      beatAddr = beatAddr,
+      data = data,
+      union = mask,
+      allocHint = !mask.andR
+    )
+  }
+
+  /** write a whole block */
+  def apply(
+      xactId: UInt,
+      blockAddr: UInt,
+      beatAddr: UInt,
+      data: UInt,
+      allocHint: Bool = True
+  )(implicit p: Parameters): Acquire = {
+    Acquire(
+      builtIn = True,
+      typ = Acquire.BuiltInTypeEnum.PUT_BLOCK.asBits.asUInt,
+      xactId = xactId,
+      blockAddr = blockAddr,
+      beatAddr = beatAddr,
+      data = data,
+      allocHint = allocHint,
+      union = Acquire.fullWriteMask
+    )
+  }
+}
+
+/** prefetch a block into outer memory with write permission */
+object PutPrefetch {
+  def apply(xactId: UInt, blockAddr: UInt)(implicit p: Parameters): Acquire = {
+    Acquire(
+      builtIn = True,
+      typ = Acquire.BuiltInTypeEnum.PREFETCH.asBits.asUInt,
+      xactId = xactId,
+      blockAddr = blockAddr,
+      union = MT_Q @@ M_XWR,
+      allocHint = True
+    )
+  }
+}
+
+/** Perform an atomic memory operation in the next-outermost level of the memory hierarchy
+  */
+object PutAtomic {
+  def apply(
+      xactId: UInt,
+      blockAddr: UInt,
+      beatAddr: UInt,
+      byteAddr: UInt,
+      data: UInt,
+      opCode: UInt,
+      opSize: UInt
+  )(implicit p: Parameters): Acquire = {
+    Acquire(
+      builtIn = True,
+      typ = Acquire.BuiltInTypeEnum.PUT_ATOMIC.asBits.asUInt,
+      xactId = xactId,
+      blockAddr = blockAddr,
+      beatAddr = beatAddr,
+      data = data,
+      union = byteAddr @@ opSize @@ opCode,
+      allocHint = True
+    )
+  }
 }
 
 object Grant {
