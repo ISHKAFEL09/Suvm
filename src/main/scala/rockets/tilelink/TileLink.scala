@@ -436,6 +436,50 @@ object PutAtomic {
   }
 }
 
+/** The Probe channel is used to force clients to release data or give up permissions
+  * on a cache block.
+  */
+class Probe(implicit p: Parameters) extends M2CChannel with HasTLBlockAddress {
+  val typ = UInt(log2Up(tlCoh.nProbeTypes) bits)
+
+  /** current xact has data */
+  override def hasData: Bool = ???
+
+  /** current xact has multi beat data */
+  override def hasDataMultiBeat: Bool = ???
+}
+
+/** Probe to particular client */
+class Probe2Dst(implicit p: Parameters) extends Probe with HasTLClientId
+
+object Probe {
+  def apply(typ: UInt, blockAddr: UInt)(implicit p: Parameters): Probe = {
+    val probe = new Probe()
+    probe.typ := typ
+    probe.blockAddr := blockAddr
+    probe
+  }
+
+  def apply(clientId: UInt, typ: UInt, blockAddr: UInt)(implicit
+      p: Parameters
+  ): Probe = {
+    val probe = new Probe2Dst()
+    probe.typ := typ
+    probe.blockAddr := blockAddr
+    probe.clientId := clientId
+    probe
+  }
+}
+
+/** The Release channel is used to release data or permission back to the manager
+ * in response to [[Probe]] messages. It can also be used to voluntarily
+ * write back data, for example in the event that dirty data must be evicted on
+ * a cache miss. The available types of Release messages are always customized by
+ * a particular [[CoherencePolicy]]. Releases may contain data or may be
+ * simple acknowledgements. Voluntary Releases are acknowledged with [[Grant Grants]].
+ */
+
+
 object Grant {
   object BuiltInTypeEnum extends SpinalEnum(binarySequential) {
     val VOLUNTARY_ACK, PREFETCH_ACK, PUT_ACK, GET_ACK, GET_BLOCK_ACK =
