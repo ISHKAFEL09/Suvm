@@ -8,4 +8,8 @@ package object rockets {
       targetDirectory = "spinal_gen"
     ).generate(design)
   }
+
+  implicit class EnumOps[T <: SpinalEnum](e: SpinalEnumElement[T]) {
+    def asUInt: UInt = e.asBits.asUInt
+  }
 }

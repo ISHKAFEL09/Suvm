@@ -3,6 +3,7 @@ package rockets.tilelink
 import rockets.core.consts.MemOps._
 import rockets.params._
 import spinal.core._
+import spinal.lib._
 import rockets.params.config._
 import rockets.utils._
 
@@ -51,12 +52,12 @@ trait HasTLBeatAddress extends TLBundle {
 
 /** client side xact id, same as MSHR index */
 trait HasTLClientXactId extends TLBundle {
-  val xactId = UInt(tlClientXactIdBits bits)
+  val clientXactId = UInt(tlClientXactIdBits bits)
 }
 
 /** manager side xact id? */
-trait HasManagerXactId extends TLBundle {
-  val xactId = UInt(tlManagerXactIdBits bits)
+trait HasTLManagerXactId extends TLBundle {
+  val managerXactId = UInt(tlManagerXactIdBits bits)
 }
 
 /** a single beat data */
@@ -91,16 +92,16 @@ class Acquire(implicit p: Parameters)
   /** whether is build-in non-cache or custom cache req */
   val builtIn = Bool()
 
-  def isBuiltInType(): Bool = builtIn
+  def isBuiltInType: Bool = builtIn
 
-  def isBuiltInType(t: Seq[Acquire.BuiltInTypeEnum.C]): Bool =
-    builtIn && t.map(typ === _.asBits.asUInt).reduce(_ || _)
+  def isBuiltInType(t: Acquire.BuiltInTypeEnum.C): Bool =
+    builtIn && this === t
 
-  def isPutAtomic: Bool = isBuiltInType(Seq(Acquire.BuiltInTypeEnum.PUT_ATOMIC))
+  def isPutAtomic: Bool = isBuiltInType(Acquire.BuiltInTypeEnum.PUT_ATOMIC)
 
-  def isPut: Bool = isBuiltInType(
-    Seq(Acquire.BuiltInTypeEnum.PUT, Acquire.BuiltInTypeEnum.PUT_BLOCK)
-  )
+  def isPut: Bool =
+    isBuiltInType(Acquire.BuiltInTypeEnum.PUT) ||
+      isBuiltInType(Acquire.BuiltInTypeEnum.PUT_BLOCK)
 
   /** request type */
   val typ = UInt(
@@ -154,18 +155,20 @@ class Acquire(implicit p: Parameters)
 
   def ===(that: UInt): Bool = typ === that
 
+  def ===(that: Acquire.BuiltInTypeEnum.C): Bool = typ === that.asBits.asUInt
+
   /** is a built-in prefetch message */
-  def isPrefetch: Bool = isBuiltInType(Seq(Acquire.BuiltInTypeEnum.PREFETCH))
+  def isPrefetch: Bool = isBuiltInType(Acquire.BuiltInTypeEnum.PREFETCH)
 
   /** current xact has data */
   override def hasData: Bool =
-    isBuiltInType() && Acquire.typesWithData
+    isBuiltInType && Acquire.typesWithData
       .map(this === _.asBits.asUInt)
       .reduce(_ || _)
 
   /** current xact has multi beat data */
   override def hasDataMultiBeat: Bool =
-    Bool(tlDataBeats > 1) && isBuiltInType() &&
+    Bool(tlDataBeats > 1) && isBuiltInType &&
       Acquire.typesWithMultiBeatData
         .map(this === _.asBits.asUInt)
         .reduce(_ || _)
@@ -175,12 +178,13 @@ class Acquire(implicit p: Parameters)
 
   /** expect Grant for each built-in Acquire */
   def getBuiltInGrantType: Grant.BuiltInTypeEnum.C = typ.mux(
-    Acquire.BuiltInTypeEnum.GET -> Grant.BuiltInTypeEnum.GET_ACK,
-    Acquire.BuiltInTypeEnum.GET_BLOCK -> Grant.BuiltInTypeEnum.GET_BLOCK_ACK,
-    Acquire.BuiltInTypeEnum.PUT -> Grant.BuiltInTypeEnum.PUT_ACK,
-    Acquire.BuiltInTypeEnum.PUT_BLOCK -> Grant.BuiltInTypeEnum.PUT_ACK,
-    Acquire.BuiltInTypeEnum.PUT_ATOMIC -> Grant.BuiltInTypeEnum.GET_ACK,
-    Acquire.BuiltInTypeEnum.PREFETCH -> Grant.BuiltInTypeEnum.PREFETCH_ACK
+    Acquire.BuiltInTypeEnum.GET.asUInt -> Grant.BuiltInTypeEnum.GET_ACK,
+    Acquire.BuiltInTypeEnum.GET_BLOCK.asUInt -> Grant.BuiltInTypeEnum.GET_BLOCK_ACK,
+    Acquire.BuiltInTypeEnum.PUT.asUInt -> Grant.BuiltInTypeEnum.PUT_ACK,
+    Acquire.BuiltInTypeEnum.PUT_BLOCK.asUInt -> Grant.BuiltInTypeEnum.PUT_ACK,
+    Acquire.BuiltInTypeEnum.PUT_ATOMIC.asUInt -> Grant.BuiltInTypeEnum.GET_ACK,
+    Acquire.BuiltInTypeEnum.PREFETCH.asUInt -> Grant.BuiltInTypeEnum.PREFETCH_ACK,
+    default -> Grant.BuiltInTypeEnum.GET_ACK
   )
 }
 
@@ -221,7 +225,7 @@ object Acquire {
   def apply(
       builtIn: Bool,
       typ: UInt,
-      xactId: UInt,
+      clientXactId: UInt,
       blockAddr: UInt,
       beatAddr: UInt = U(0),
       data: UInt = U(0),
@@ -231,7 +235,7 @@ object Acquire {
     val acq = new Acquire()
     acq.builtIn := builtIn
     acq.typ := typ
-    acq.xactId := xactId
+    acq.clientXactId := clientXactId
     acq.blockAddr := blockAddr
     acq.beatAddr := beatAddr
     acq.data := data
@@ -255,7 +259,7 @@ object Get {
 
   /** get the whole beat */
   def apply(
-      xactId: UInt,
+      clientXactId: UInt,
       blockAddr: UInt,
       beatAddr: UInt,
       allocHint: Bool
@@ -265,7 +269,7 @@ object Get {
     Acquire(
       builtIn = True,
       typ = Acquire.BuiltInTypeEnum.GET.asBits.asUInt,
-      xactId = xactId,
+      clientXactId = clientXactId,
       blockAddr = blockAddr,
       beatAddr = beatAddr,
       allocHint = allocHint,
@@ -275,7 +279,7 @@ object Get {
 
   /** get partial data of a beat */
   def apply(
-      xactId: UInt,
+      clientXactId: UInt,
       blockAddr: UInt,
       beatAddr: UInt,
       byteAddr: UInt,
@@ -287,7 +291,7 @@ object Get {
     Acquire(
       builtIn = True,
       typ = Acquire.BuiltInTypeEnum.GET.asBits.asUInt,
-      xactId = xactId,
+      clientXactId = clientXactId,
       blockAddr = blockAddr,
       beatAddr = beatAddr,
       allocHint = allocHint,
@@ -298,13 +302,13 @@ object Get {
 
 /** Get a whole block from outer memory hierarchy */
 object GetBlock {
-  def apply(xactId: UInt, blockAddr: UInt, allocHint: Bool = True)(implicit
-      p: Parameters
+  def apply(clientXactId: UInt, blockAddr: UInt, allocHint: Bool = True)(
+      implicit p: Parameters
   ): Acquire = {
     Acquire(
       builtIn = True,
       typ = Acquire.BuiltInTypeEnum.GET_BLOCK.asBits.asUInt,
-      xactId = xactId,
+      clientXactId = clientXactId,
       blockAddr = blockAddr,
       union = MT_Q @@ M_XRD,
       allocHint = allocHint
@@ -314,11 +318,13 @@ object GetBlock {
 
 /** prefetch a block into outer memory with read permission */
 object GetPrefetch {
-  def apply(xactId: UInt, blockAddr: UInt)(implicit p: Parameters): Acquire = {
+  def apply(clientXactId: UInt, blockAddr: UInt)(implicit
+      p: Parameters
+  ): Acquire = {
     Acquire(
       builtIn = True,
       typ = Acquire.BuiltInTypeEnum.PREFETCH.asBits.asUInt,
-      xactId = xactId,
+      clientXactId = clientXactId,
       blockAddr = blockAddr,
       union = MT_Q @@ M_XRD,
       allocHint = True
@@ -329,7 +335,7 @@ object GetPrefetch {
 /** put a single beat into the outer memory */
 object Put {
   def apply(
-      xactId: UInt,
+      clientXactId: UInt,
       blockAddr: UInt,
       beatAddr: UInt,
       data: UInt,
@@ -338,7 +344,7 @@ object Put {
     Acquire(
       builtIn = True,
       typ = Acquire.BuiltInTypeEnum.PUT.asBits.asUInt,
-      xactId = xactId,
+      clientXactId = clientXactId,
       blockAddr = blockAddr,
       beatAddr = beatAddr,
       data = data,
@@ -358,7 +364,7 @@ object PutBlock {
 
   /** write partial data with mask */
   def apply(
-      xactId: UInt,
+      clientXactId: UInt,
       blockAddr: UInt,
       beatAddr: UInt,
       data: UInt,
@@ -367,7 +373,7 @@ object PutBlock {
     Acquire(
       builtIn = True,
       typ = Acquire.BuiltInTypeEnum.PUT_BLOCK.asBits.asUInt,
-      xactId = xactId,
+      clientXactId = clientXactId,
       blockAddr = blockAddr,
       beatAddr = beatAddr,
       data = data,
@@ -378,7 +384,7 @@ object PutBlock {
 
   /** write a whole block */
   def apply(
-      xactId: UInt,
+      clientXactId: UInt,
       blockAddr: UInt,
       beatAddr: UInt,
       data: UInt,
@@ -387,7 +393,7 @@ object PutBlock {
     Acquire(
       builtIn = True,
       typ = Acquire.BuiltInTypeEnum.PUT_BLOCK.asBits.asUInt,
-      xactId = xactId,
+      clientXactId = clientXactId,
       blockAddr = blockAddr,
       beatAddr = beatAddr,
       data = data,
@@ -399,11 +405,13 @@ object PutBlock {
 
 /** prefetch a block into outer memory with write permission */
 object PutPrefetch {
-  def apply(xactId: UInt, blockAddr: UInt)(implicit p: Parameters): Acquire = {
+  def apply(clientXactId: UInt, blockAddr: UInt)(implicit
+      p: Parameters
+  ): Acquire = {
     Acquire(
       builtIn = True,
       typ = Acquire.BuiltInTypeEnum.PREFETCH.asBits.asUInt,
-      xactId = xactId,
+      clientXactId = clientXactId,
       blockAddr = blockAddr,
       union = MT_Q @@ M_XWR,
       allocHint = True
@@ -415,7 +423,7 @@ object PutPrefetch {
   */
 object PutAtomic {
   def apply(
-      xactId: UInt,
+      clientXactId: UInt,
       blockAddr: UInt,
       beatAddr: UInt,
       byteAddr: UInt,
@@ -426,7 +434,7 @@ object PutAtomic {
     Acquire(
       builtIn = True,
       typ = Acquire.BuiltInTypeEnum.PUT_ATOMIC.asBits.asUInt,
-      xactId = xactId,
+      clientXactId = clientXactId,
       blockAddr = blockAddr,
       beatAddr = beatAddr,
       data = data,
@@ -450,7 +458,7 @@ class Probe(implicit p: Parameters) extends M2CChannel with HasTLBlockAddress {
 }
 
 /** Probe to particular client */
-class Probe2Dst(implicit p: Parameters) extends Probe with HasTLClientId
+class ProbeWithCid(implicit p: Parameters) extends Probe with HasTLClientId
 
 object Probe {
   def apply(typ: UInt, blockAddr: UInt)(implicit p: Parameters): Probe = {
@@ -463,7 +471,7 @@ object Probe {
   def apply(clientId: UInt, typ: UInt, blockAddr: UInt)(implicit
       p: Parameters
   ): Probe = {
-    val probe = new Probe2Dst()
+    val probe = new ProbeWithCid()
     probe.typ := typ
     probe.blockAddr := blockAddr
     probe.clientId := clientId
@@ -472,18 +480,168 @@ object Probe {
 }
 
 /** The Release channel is used to release data or permission back to the manager
- * in response to [[Probe]] messages. It can also be used to voluntarily
- * write back data, for example in the event that dirty data must be evicted on
- * a cache miss. The available types of Release messages are always customized by
- * a particular [[CoherencePolicy]]. Releases may contain data or may be
- * simple acknowledgements. Voluntary Releases are acknowledged with [[Grant Grants]].
- */
+  * in response to [[Probe]] messages. It can also be used to voluntarily
+  * write back data, for example in the event that dirty data must be evicted on
+  * a cache miss. The available types of Release messages are always customized by
+  * a particular [[CoherencePolicy]]. Releases may contain data or may be
+  * simple acknowledgements. Voluntary Releases are acknowledged with [[Grant Grants]].
+  */
+class Release(implicit p: Parameters)
+    extends C2MChannel
+    with HasTLBlockAddress
+    with HasTLClientXactId
+    with HasTLData {
+  val typ = UInt(log2Up(tlCoh.nReleaseTypes) bits)
 
+  /** whether is voluntary release or response to Probe */
+  val voluntary = Bool()
 
+  def ===(that: UInt): Bool = typ === that
+
+  /** current xact has data */
+  override def hasData: Bool = tlCoh.releaseTypesWithData.sContains(typ)
+
+  /** current xact has multi beat data */
+  override def hasDataMultiBeat: Bool = hasData && Bool(tlDataBeats > 1)
+
+  def isVoluntary: Bool = voluntary
+}
+
+/** [[Release]] with an extra field stating source id */
+class ReleaseWithCid(implicit p: Parameters) extends Release with HasTLClientId
+
+/** [[Release]] factory */
+object Release {
+  def apply(
+      voluntary: Bool,
+      typ: UInt,
+      clientXactId: UInt,
+      blockAddr: UInt,
+      beatAddr: UInt,
+      data: UInt
+  )(implicit p: Parameters): Release = {
+    val r = new Release()
+    r.typ := typ
+    r.voluntary := voluntary
+    r.clientXactId := clientXactId
+    r.blockAddr := blockAddr
+    r.beatAddr := beatAddr
+    r.data := data
+    r
+  }
+}
+
+/** The Grant channel is used to refill data or grant permissions requested of the
+  * manager agent via an [[Acquire]] message. It is also used to acknowledge
+  * the receipt of voluntary write back from clients in the form of [[Release]]
+  * messages. There are built-in Grant messages used for Gets and Puts, and
+  * coherence policies may also define custom Grant types. Grants may contain data
+  * or may be simple acknowledgements. Grants are responded to with [[Finish]].
+  */
+class Grant(implicit p: Parameters)
+    extends M2CChannel
+    with HasTLData
+    with HasTLClientXactId
+    with HasTLManagerXactId {
+  val builtIn = Bool()
+
+  val typ = UInt(
+    widthOf(Grant.BuiltInTypeEnum()) max log2Up(tlCoh.nGrantTypes) bits
+  )
+
+  def isBuiltInType: Bool = builtIn
+
+  def isBuiltInType(t: Grant.BuiltInTypeEnum.C): Bool =
+    builtIn && this === t
+
+  /** type equality */
+  def ===(that: UInt): Bool = typ === that
+
+  def ===(that: Grant.BuiltInTypeEnum.C): Bool = typ === that.asBits.asUInt
+
+  /** current xact has data */
+  override def hasData: Bool =
+    isBuiltInType ?
+      Grant.typesWithData.map(this === _).reduce(_ || _) |
+      tlCoh.grantTypesWithData.sContains(typ)
+
+  /** current xact has multi beat data */
+  override def hasDataMultiBeat: Bool =
+    Bool(tlDataBeats > 1) && (isBuiltInType ?
+      Grant.typesWithMultiBeatData.map(this === _).reduce(_ || _) |
+      tlCoh.grantTypesWithData.sContains(typ))
+
+  def isVoluntary: Bool =
+    isBuiltInType && this === Grant.BuiltInTypeEnum.VOLUNTARY_ACK
+}
+
+/** [[Grant]] with dest client id */
+class GrantWithCid(implicit p: Parameters) extends Grant with HasTLClientId
+
+/** [[Grant]] factory */
 object Grant {
   object BuiltInTypeEnum extends SpinalEnum(binarySequential) {
     val VOLUNTARY_ACK, PREFETCH_ACK, PUT_ACK, GET_ACK, GET_BLOCK_ACK =
       newElement()
   }
+
+  val typesWithData: Seq[BuiltInTypeEnum.C] =
+    Seq(BuiltInTypeEnum.GET_BLOCK_ACK, BuiltInTypeEnum.GET_ACK)
+
+  val typesWithMultiBeatData: Seq[BuiltInTypeEnum.C] = Seq(
+    BuiltInTypeEnum.GET_BLOCK_ACK
+  )
+
+  def apply(
+      builtIn: Bool,
+      typ: UInt,
+      clientXactId: UInt,
+      managerXactId: UInt,
+      beatAddr: UInt,
+      data: UInt
+  )(implicit p: Parameters): Grant = {
+    val g = new Grant
+    g.builtIn := builtIn
+    g.typ := typ
+    g.clientXactId := clientXactId
+    g.managerXactId := managerXactId
+    g.beatAddr := beatAddr
+    g.data := data
+    g
+  }
+
+  def apply(
+      dest: UInt,
+      builtIn: Bool,
+      typ: UInt,
+      clientXactId: UInt,
+      managerXactId: UInt,
+      beatAddr: UInt,
+      data: UInt
+  )(implicit p: Parameters): GrantWithCid = {
+    val g = new GrantWithCid()
+    g.builtIn := builtIn
+    g.typ := typ
+    g.clientXactId := clientXactId
+    g.managerXactId := managerXactId
+    g.beatAddr := beatAddr
+    g.data := data
+    g.clientId := dest
+    g
+  }
 }
-class TileLink {}
+
+/** The Finish channel is used to provide a global ordering of transactions
+  * in networks that do not guarantee point-to-point ordering of messages.
+  * A Finsish message is sent as acknowledgement of receipt of a [[Grant]].
+  * When a Finish message is received, a manager knows it is safe to begin
+  * processing other transactions that touch the same cache block.
+  */
+class Finish extends C2MChannel with HasTLManagerXactId {
+
+  /** current xact has data */
+  override def hasData: Bool = False
+
+  /** current xact has multi beat data */
+  override def hasDataMultiBeat: Bool = False
+}

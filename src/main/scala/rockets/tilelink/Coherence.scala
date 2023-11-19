@@ -1,4 +1,5 @@
 package rockets.tilelink
+import spinal.core._
 
 trait CoherencePolicy
     extends HasCustomTileLinkMessageTypes
@@ -10,6 +11,9 @@ trait HasCustomTileLinkMessageTypes {
   val nProbeTypes: Int
   val nReleaseTypes: Int
   val nGrantTypes: Int
+
+  val releaseTypesWithData: Vec[UInt]
+  val grantTypesWithData: Vec[UInt]
 }
 
 trait HasClientCoh {
@@ -27,4 +31,7 @@ case class MESICoherence(dir: DirectoryRepresentation) extends CoherencePolicy {
   override val nProbeTypes: Int = 3
   override val nReleaseTypes: Int = 6
   override val nGrantTypes: Int = 3
+
+  override val releaseTypesWithData: Vec[UInt] = Vec(U(0), U(1))
+  override val grantTypesWithData: Vec[UInt] = Vec(U(0), U(1))
 }
