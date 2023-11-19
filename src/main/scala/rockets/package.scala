@@ -9,7 +9,11 @@ package object rockets {
     ).generate(design)
   }
 
-  implicit class EnumOps[T <: SpinalEnum](e: SpinalEnumElement[T]) {
+  implicit class EnumElementOps[T <: SpinalEnum](e: SpinalEnumElement[T]) {
+    def asUInt: UInt = e.asBits.asUInt
+  }
+
+  implicit class EnumCraftOps[T <: SpinalEnum](e: SpinalEnumCraft[T]) {
     def asUInt: UInt = e.asBits.asUInt
   }
 }

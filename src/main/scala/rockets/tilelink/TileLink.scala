@@ -155,7 +155,7 @@ class Acquire(implicit p: Parameters)
 
   def ===(that: UInt): Bool = typ === that
 
-  def ===(that: Acquire.BuiltInTypeEnum.C): Bool = typ === that.asBits.asUInt
+  def ===(that: Acquire.BuiltInTypeEnum.C): Bool = typ === that.asUInt
 
   /** is a built-in prefetch message */
   def isPrefetch: Bool = isBuiltInType(Acquire.BuiltInTypeEnum.PREFETCH)
@@ -163,14 +163,14 @@ class Acquire(implicit p: Parameters)
   /** current xact has data */
   override def hasData: Bool =
     isBuiltInType && Acquire.typesWithData
-      .map(this === _.asBits.asUInt)
+      .map(this === _.asUInt)
       .reduce(_ || _)
 
   /** current xact has multi beat data */
   override def hasDataMultiBeat: Bool =
     Bool(tlDataBeats > 1) && isBuiltInType &&
       Acquire.typesWithMultiBeatData
-        .map(this === _.asBits.asUInt)
+        .map(this === _.asUInt)
         .reduce(_ || _)
 
   /** require manager to probe this client, when multiple client multiplex same port */
@@ -268,7 +268,7 @@ object Get {
   ): Acquire = {
     Acquire(
       builtIn = True,
-      typ = Acquire.BuiltInTypeEnum.GET.asBits.asUInt,
+      typ = Acquire.BuiltInTypeEnum.GET.asUInt,
       clientXactId = clientXactId,
       blockAddr = blockAddr,
       beatAddr = beatAddr,
@@ -290,7 +290,7 @@ object Get {
   ): Acquire = {
     Acquire(
       builtIn = True,
-      typ = Acquire.BuiltInTypeEnum.GET.asBits.asUInt,
+      typ = Acquire.BuiltInTypeEnum.GET.asUInt,
       clientXactId = clientXactId,
       blockAddr = blockAddr,
       beatAddr = beatAddr,
@@ -307,7 +307,7 @@ object GetBlock {
   ): Acquire = {
     Acquire(
       builtIn = True,
-      typ = Acquire.BuiltInTypeEnum.GET_BLOCK.asBits.asUInt,
+      typ = Acquire.BuiltInTypeEnum.GET_BLOCK.asUInt,
       clientXactId = clientXactId,
       blockAddr = blockAddr,
       union = MT_Q @@ M_XRD,
@@ -323,7 +323,7 @@ object GetPrefetch {
   ): Acquire = {
     Acquire(
       builtIn = True,
-      typ = Acquire.BuiltInTypeEnum.PREFETCH.asBits.asUInt,
+      typ = Acquire.BuiltInTypeEnum.PREFETCH.asUInt,
       clientXactId = clientXactId,
       blockAddr = blockAddr,
       union = MT_Q @@ M_XRD,
@@ -343,7 +343,7 @@ object Put {
   )(implicit p: Parameters): Acquire = {
     Acquire(
       builtIn = True,
-      typ = Acquire.BuiltInTypeEnum.PUT.asBits.asUInt,
+      typ = Acquire.BuiltInTypeEnum.PUT.asUInt,
       clientXactId = clientXactId,
       blockAddr = blockAddr,
       beatAddr = beatAddr,
@@ -372,7 +372,7 @@ object PutBlock {
   )(implicit p: Parameters): Acquire = {
     Acquire(
       builtIn = True,
-      typ = Acquire.BuiltInTypeEnum.PUT_BLOCK.asBits.asUInt,
+      typ = Acquire.BuiltInTypeEnum.PUT_BLOCK.asUInt,
       clientXactId = clientXactId,
       blockAddr = blockAddr,
       beatAddr = beatAddr,
@@ -392,7 +392,7 @@ object PutBlock {
   )(implicit p: Parameters): Acquire = {
     Acquire(
       builtIn = True,
-      typ = Acquire.BuiltInTypeEnum.PUT_BLOCK.asBits.asUInt,
+      typ = Acquire.BuiltInTypeEnum.PUT_BLOCK.asUInt,
       clientXactId = clientXactId,
       blockAddr = blockAddr,
       beatAddr = beatAddr,
@@ -410,7 +410,7 @@ object PutPrefetch {
   ): Acquire = {
     Acquire(
       builtIn = True,
-      typ = Acquire.BuiltInTypeEnum.PREFETCH.asBits.asUInt,
+      typ = Acquire.BuiltInTypeEnum.PREFETCH.asUInt,
       clientXactId = clientXactId,
       blockAddr = blockAddr,
       union = MT_Q @@ M_XWR,
@@ -433,7 +433,7 @@ object PutAtomic {
   )(implicit p: Parameters): Acquire = {
     Acquire(
       builtIn = True,
-      typ = Acquire.BuiltInTypeEnum.PUT_ATOMIC.asBits.asUInt,
+      typ = Acquire.BuiltInTypeEnum.PUT_ATOMIC.asUInt,
       clientXactId = clientXactId,
       blockAddr = blockAddr,
       beatAddr = beatAddr,
@@ -557,7 +557,7 @@ class Grant(implicit p: Parameters)
   /** type equality */
   def ===(that: UInt): Bool = typ === that
 
-  def ===(that: Grant.BuiltInTypeEnum.C): Bool = typ === that.asBits.asUInt
+  def ===(that: Grant.BuiltInTypeEnum.C): Bool = typ === that.asUInt
 
   /** current xact has data */
   override def hasData: Bool =
@@ -637,7 +637,9 @@ object Grant {
   * When a Finish message is received, a manager knows it is safe to begin
   * processing other transactions that touch the same cache block.
   */
-class Finish extends C2MChannel with HasTLManagerXactId {
+class Finish(implicit p: Parameters)
+    extends C2MChannel
+    with HasTLManagerXactId {
 
   /** current xact has data */
   override def hasData: Bool = False
