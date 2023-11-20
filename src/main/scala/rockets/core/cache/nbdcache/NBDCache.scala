@@ -8,17 +8,17 @@ import rockets.tilelink._
 import spinal.core._
 import spinal.lib._
 
-abstract class NBDCacheBundle(implicit p: Parameters)
+abstract class NBDBundle(implicit p: Parameters)
     extends CacheBundle
     with HasDCacheParams
 
-abstract class NBDCacheComponent(implicit p: Parameters)
+abstract class NBDComponent(implicit p: Parameters)
     extends CacheComponent
     with HasDCacheParams
 
 /** core <-> nbdcache
   */
-trait HasCoreMemOp extends NBDCacheBundle {
+trait HasCoreMemOp extends NBDBundle {
 
   /** addr to visit */
   val addr = UInt(coreMaxAddrBits bits)
@@ -34,7 +34,7 @@ trait HasCoreMemOp extends NBDCacheBundle {
 
 /** core/replay <-> cache
   */
-trait HasCoreData extends NBDCacheBundle {
+trait HasCoreData extends NBDBundle {
 
   /** for ld/st? */
   val data = UInt(coreDataBits bits)
@@ -42,7 +42,7 @@ trait HasCoreData extends NBDCacheBundle {
 
 /** some control signals sent to cache
   */
-trait HasCtrlInfo extends NBDCacheBundle {
+trait HasCtrlInfo extends NBDBundle {
   // TODO:  /** kill the previous request? */
   val kill = Bool()
 
@@ -52,13 +52,13 @@ trait HasCtrlInfo extends NBDCacheBundle {
 
 /** miss info to mshr
   */
-trait HasMissInfo extends NBDCacheBundle {
+trait HasMissInfo extends NBDBundle {
 
   /** whether tag match */
   val tagMatch = Bool()
 
   /** meta data of miss entry */
-  val oldMeta = NBDCacheMeta()
+  val oldMeta = NBDMeta()
 
   /** way to be replaced */
   val way = UInt(nWays bits)
@@ -66,14 +66,14 @@ trait HasMissInfo extends NBDCacheBundle {
 
 /** cache request
   */
-case class NBDCacheReq()(implicit p: Parameters)
+case class NBDReq()(implicit p: Parameters)
     extends HasCoreMemOp
     with HasCtrlInfo
     with HasCoreData
 
 /** cache response
   */
-case class NBDCacheResp()(implicit p: Parameters)
+case class NBDResp()(implicit p: Parameters)
     extends HasCoreMemOp
     with HasCoreData {
 
@@ -88,7 +88,7 @@ case class NBDCacheResp()(implicit p: Parameters)
 
 /** exceptions for cache
   */
-case class NBDCacheExceptions()(implicit p: Parameters) extends NBDCacheBundle {
+case class NBDExceptions()(implicit p: Parameters) extends NBDBundle {
 
   /** misaligned exception from request to cache */
   val maXcpt = new Bundle {
@@ -101,23 +101,23 @@ case class NBDCacheExceptions()(implicit p: Parameters) extends NBDCacheBundle {
   }
 }
 
-/** other module <-> NBDCache, cache as slave
+/** other module <-> NBD, cache as slave
   */
-case class NBDCacheIO()(implicit p: Parameters)
-    extends NBDCacheBundle
+case class NBDIO()(implicit p: Parameters)
+    extends NBDBundle
     with IMasterSlave {
 
   /** request to cache */
-  val req = Stream(NBDCacheReq())
+  val req = Stream(NBDReq())
 
   /** cache response */
-  val resp = Flow(NBDCacheResp())
+  val resp = Flow(NBDResp())
 
   /** id for next replay req */
   val replayNext = Flow(UInt(coreDCacheRegTagBits bits))
 
   /** cache exceptions */
-  val xcpt = NBDCacheExceptions()
+  val xcpt = NBDExceptions()
 
   /** reset lr/sc counter */
   val invalidateLR = Bool()

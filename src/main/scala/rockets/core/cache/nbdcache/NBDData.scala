@@ -6,32 +6,32 @@ import spinal.core._
 
 /** cache data read, include addr and way
   */
-class NBDCacheDataReadReq(implicit p: Parameters)
-    extends NBDCacheBundle
+case class NBDDataReadReq()(implicit p: Parameters)
+    extends NBDBundle
     with CacheDataReadReq
 
 /** data write, plus write data and mask
   */
-class NBDCacheDataWriteReq(implicit p: Parameters)
-    extends NBDCacheBundle
+case class NBDDataWriteReq()(implicit p: Parameters)
+    extends NBDBundle
     with CacheDataWriteReq
 
-/** used in [[NBDCache]], based on [[CacheData]], contains cache data array
+/** used in [[NBD]], based on [[CacheData]], contains cache data array
   */
 case class NBDData()(implicit p: Parameters)
-    extends NBDCacheComponent
+    extends NBDComponent
     with CacheData {
 
   /** read request port */
   override def readReq: HardType[CacheDataReadReq] =
-    new NBDCacheDataReadReq()
+    new NBDDataReadReq()
 
   /** write request port */
   override def writeReq: HardType[CacheDataWriteReq] =
-    new NBDCacheDataWriteReq()
+    new NBDDataWriteReq()
 }
 
-object NBDCacheData extends App {
+object NBDData extends App {
   import rockets._
   import rockets.core.mmu.TLBApp
   generate(NBDData()(TLBApp.config))

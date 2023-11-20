@@ -1,6 +1,6 @@
 package rockets.core.mmu
 
-import rockets.core.cache.nbdcache.NBDCacheIO
+import rockets.core.cache.nbdcache.NBDIO
 import rockets.core.consts.MemOps._
 import rockets.core.enums._
 import rockets.core.registers.MStatus
@@ -133,7 +133,7 @@ case class PTW(reqNum: Int)(implicit p: Parameters) extends PTWComponent {
     val requestor = Vec(slave(TLB2PTWIO()), reqNum)
 
     /** ptw to dcache req */
-    val mem = master(NBDCacheIO())
+    val mem = master(NBDIO())
 
     /** info from dpath to ptw */
     val dpath = slave(DataPath2PTWIO())
