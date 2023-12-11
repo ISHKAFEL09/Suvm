@@ -6,7 +6,7 @@ package object rockets {
     SpinalConfig(
       mode = Verilog,
       targetDirectory = "spinal_gen"
-    ).generate(design)
+    ).generate(design).printPruned()
   }
 
   implicit class EnumElementOps[T <: SpinalEnum](e: SpinalEnumElement[T]) {

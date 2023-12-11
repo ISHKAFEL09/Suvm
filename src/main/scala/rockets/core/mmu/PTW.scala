@@ -363,5 +363,6 @@ case class PTW(reqNum: Int)(implicit p: Parameters) extends PTWComponent {
 
 object PTWApp extends App {
   import rockets._
-  generate(PTW(4)(TLBApp.config))
+  import rockets.tile.Configs._
+  generate(PTW(4))
 }

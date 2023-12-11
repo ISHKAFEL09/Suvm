@@ -45,7 +45,11 @@ trait CacheMetaWriteReq[T <: CacheMetaData] extends CacheMetaReadReq {
 
 /** basic meta data array component
   */
-trait CacheMeta[T <: CacheMetaData] extends CacheComponent {
+trait CacheMeta[
+    T <: CacheMetaData,
+    R <: CacheMetaReadReq,
+    W <: CacheMetaWriteReq[T]
+] extends CacheComponent {
 
   /** concrete meta data */
   def data: HardType[T]
@@ -57,10 +61,10 @@ trait CacheMeta[T <: CacheMetaData] extends CacheComponent {
   }
 
   /** sub class of [[CacheMetaReadReq]] */
-  def readReq: HardType[CacheMetaReadReq]
+  def readReq: HardType[R]
 
   /** sub class of [[CacheMetaWriteReq]] */
-  def writeReq: HardType[CacheMetaWriteReq[T]]
+  def writeReq: HardType[W]
 
   val io = new Bundle {
     val read = slave(Stream(readReq()))
@@ -111,13 +115,14 @@ trait CacheDataWriteReq extends CacheDataReadReq {
 }
 
 /** basic cache data component */
-trait CacheData extends CacheComponent {
+trait CacheData[R <: CacheDataReadReq, W <: CacheDataWriteReq]
+    extends CacheComponent {
 
   /** read request port */
-  def readReq: HardType[CacheDataReadReq]
+  def readReq: HardType[R]
 
   /** write request port */
-  def writeReq: HardType[CacheDataWriteReq]
+  def writeReq: HardType[W]
 
   def refillCycles: Int
 

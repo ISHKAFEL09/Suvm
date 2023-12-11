@@ -35,17 +35,21 @@ case class NBDMetaWriteReq()(implicit p: Parameters)
   */
 case class NBDMeta()(implicit p: Parameters)
     extends NBDComponent
-    with CacheMeta[NBDMetaData] {
+    with CacheMeta[
+      NBDMetaData,
+      NBDMetaReadReq,
+      NBDMetaWriteReq
+    ] {
   override def data: HardType[NBDMetaData] = NBDMetaData()
 
-  override def writeReq: HardType[CacheMetaWriteReq[NBDMetaData]] =
-    new NBDMetaWriteReq()
+  override def readReq: HardType[NBDMetaReadReq] = NBDMetaReadReq()
 
-  override def readReq: HardType[CacheMetaReadReq] = new NBDMetaReadReq()
+  override def writeReq: HardType[NBDMetaWriteReq] =
+    NBDMetaWriteReq()
 }
 
 object NBDMeta extends App {
   import rockets._
-  import rockets.core.mmu.TLBApp
-  generate(NBDMeta()(TLBApp.config))
+  import rockets.tile.Configs._
+  generate(NBDMeta())
 }

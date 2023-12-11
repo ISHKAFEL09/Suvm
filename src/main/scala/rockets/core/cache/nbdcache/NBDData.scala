@@ -20,19 +20,17 @@ case class NBDDataWriteReq()(implicit p: Parameters)
   */
 case class NBDData()(implicit p: Parameters)
     extends NBDComponent
-    with CacheData {
+    with CacheData[NBDDataReadReq, NBDDataWriteReq] {
 
   /** read request port */
-  override def readReq: HardType[CacheDataReadReq] =
-    new NBDDataReadReq()
+  override def readReq: HardType[NBDDataReadReq] = NBDDataReadReq()
 
   /** write request port */
-  override def writeReq: HardType[CacheDataWriteReq] =
-    new NBDDataWriteReq()
+  override def writeReq: HardType[NBDDataWriteReq] = NBDDataWriteReq()
 }
 
 object NBDData extends App {
   import rockets._
-  import rockets.core.mmu.TLBApp
-  generate(NBDData()(TLBApp.config))
+  import rockets.tile.Configs._
+  generate(NBDData())
 }
