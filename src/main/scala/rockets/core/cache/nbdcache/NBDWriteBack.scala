@@ -95,23 +95,33 @@ case class NBDWriteBack()(implicit p: Parameters) extends NBDComponent {
   io.req.ready := !busy
 
   io.metaReq.valid := needRead
+
+  /** meta entry idx */
   io.metaReq.payload.idx := reqIdx
+
+  /** meta req tag */
   io.metaReq.payload.tag := reqTag
 
   io.dataReq.valid := needRead
+
+  /** block_idx::row_idx::word_idx */
   io.dataReq.payload.addr :=
     reqIdx @@ readAddr(0, log2Up(refillCycles) bits) @@ U(0, rowOffBits bits)
   io.dataReq.payload.way := req.way
 
+  /** buf full and new data resp come */
   io.release.valid := ready2Release
   io.release.payload.allowOverride()
   io.release.payload := req
+
+  /** beat count in one tl block */
   io.release.payload.beatAddr := beatCnt
+
+  /** new_data::buf */
   io.release.payload.data := io.dataResp @@ buf.asBits.asUInt
 }
 
 object NBDWriteBack extends App {
-  import rockets._
   import spinal.core.sim._
   import rockets.tile.Configs._
 
