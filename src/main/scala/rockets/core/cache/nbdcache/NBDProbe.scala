@@ -40,6 +40,45 @@ case class NBDProbe()(implicit p: Parameters) extends NBDComponent {
     val sIdle = StateEntryPoint()
 
     /** request to read meta */
-    val sMetaRead = State()
+    val sMetaRead, sMetaResp = State()
+
+    /** check the mshr ready in s2 */
+    val sCheckMSHR = State()
+
+    /** send release to tl if no need to write back */
+    val sRelease = State()
+
+    /** write back victim entry */
+    val sWbReq, sWbResp = State()
+
+    /** update meta data */
+    val sMetaWrite = State()
+
+    /** begin to read the meta data when got new probe request */
+    sIdle.whenIsActive {
+      when(io.probe.valid) {
+        goto(sMetaRead)
+      }
+    }
+
+    /** meta read fire, goto s1 */
+    sMetaRead.whenIsActive {
+      when(io.metaRead.ready) {
+        goto(sMetaResp)
+      }
+    }
+
+    /** goto s2 */
+    sMetaResp.whenIsActive {
+      goto(sCheckMSHR)
+    }
+
+    /** check whether mshr has hazard in s2 if enter the same entry:
+      * 1. mshr in state before refill and could write data to the victim, which probe may release to tl
+      * 2. mshr has just write meta data, which cause probe got the wrong state
+      */
+
   }
+
+  val reqReg = RegNextWhen(io.probe.payload, fsm.isExiting(fsm.sIdle))
 }
