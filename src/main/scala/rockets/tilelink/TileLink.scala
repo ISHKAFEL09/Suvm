@@ -105,7 +105,7 @@ class Acquire(implicit p: Parameters)
 
   /** request type */
   val typ = UInt(
-    widthOf(Acquire.BuiltInTypeEnum()) max log2Up(tlCoh.nAcquireTypes) bits
+    widthOf(Acquire.BuiltInTypeEnum()) max widthOf(tlCoh.AcquireEnum()) bits
   )
 
   /** multiplex, write mask for put and put_block, memory op for put_atomic */
@@ -448,7 +448,7 @@ object PutAtomic {
   * on a cache block.
   */
 class Probe(implicit p: Parameters) extends M2CChannel with HasTLBlockAddress {
-  val typ = UInt(log2Up(tlCoh.nProbeTypes) bits)
+  val typ = UInt(widthOf(tlCoh.ProbeEnum()) bits)
 
   /** current xact has data */
   override def hasData: Bool = ???
@@ -491,7 +491,7 @@ class Release(implicit p: Parameters)
     with HasTLBlockAddress
     with HasTLClientXactId
     with HasTLData {
-  val typ = UInt(log2Up(tlCoh.nReleaseTypes) bits)
+  val typ = UInt(widthOf(tlCoh.ReleaseEnum()) bits)
 
   /** whether is voluntary release or response to Probe */
   val voluntary = Bool()
@@ -546,7 +546,7 @@ class Grant(implicit p: Parameters)
   val builtIn = Bool()
 
   val typ = UInt(
-    widthOf(Grant.BuiltInTypeEnum()) max log2Up(tlCoh.nGrantTypes) bits
+    widthOf(Grant.BuiltInTypeEnum()) max widthOf(tlCoh.GrantEnum()) bits
   )
 
   def isBuiltInType: Bool = builtIn
