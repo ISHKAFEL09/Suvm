@@ -98,14 +98,16 @@ case class NBDProbe()(implicit p: Parameters) extends NBDComponent {
       * 3. otherwise release and finish
       */
     sRelease.whenIsActive {
-      when(hit) {
-        when(dirty) {
-          goto(sWbReq)
+      when(io.release.ready) {
+        when(hit) {
+          when(dirty) {
+            goto(sWbReq)
+          }.otherwise {
+            goto(sMetaWrite)
+          }
         }.otherwise {
-          goto(sMetaWrite)
+          goto(sIdle)
         }
-      }.otherwise {
-        goto(sIdle)
       }
     }
 
